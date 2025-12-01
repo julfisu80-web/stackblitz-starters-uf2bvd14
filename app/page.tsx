@@ -3,44 +3,42 @@
 import React, { useMemo, useState } from 'react';
 
 /* =========================
-   Tipos
+   Tipos y catálogos
    ========================= */
+
 type Modality = 'Running' | 'Ciclismo';
 
 type CHOProduct = {
   nombre: string;
   tipo: 'Gel' | 'Barrita' | 'Otro';
-  cho: number; // g por unidad
-  glucosa: number; // g
-  fructosa: number; // g
-  maltodextrina: number; // g
-  sacarosa: number; // g
-  cafeina: number; // mg
+  cho: number;
+  glucosa: number;
+  fructosa: number;
+  maltodextrina: number;
+  sacarosa: number;
+  cafeina: number;
   notas?: string;
 };
 
 type DrinkProduct = {
   nombre: string;
   tipo: 'Bebida';
-  mlPorPorcion: number; // ml/porción (ej: 500 ml)
-  choPorPorcion: number; // g CHO/porción
-  sodioPorPorcion: number; // mg Na/porción
+  mlPorPorcion: number;
+  choPorPorcion: number;
+  sodioPorPorcion: number;
   notas?: string;
 };
 
 type ElectrolyteProduct = {
   nombre: string;
   tipo: 'Capsula';
-  sodioPorUnidad: number; // mg Na/unidad
+  sodioPorUnidad: number;
   notas?: string;
 };
 
-/* =========================
-   Catálogos por defecto
-   ========================= */
 const DEFAULT_CHO_PRODUCTS: CHOProduct[] = [
   {
-    nombre: 'Gel 2:1 sin cafeína (25g)',
+    nombre: 'Gel 2:1 sin cafeína (25 g)',
     tipo: 'Gel',
     cho: 25,
     glucosa: 16.7,
@@ -48,10 +46,10 @@ const DEFAULT_CHO_PRODUCTS: CHOProduct[] = [
     maltodextrina: 0,
     sacarosa: 0,
     cafeina: 0,
-    notas: 'Mezcla 2:1',
+    notas: 'Mezcla 2:1 sin cafeína',
   },
   {
-    nombre: 'Gel 2:1 con cafeína (25g)',
+    nombre: 'Gel 2:1 con cafeína (25 g)',
     tipo: 'Gel',
     cho: 25,
     glucosa: 16.7,
@@ -59,36 +57,16 @@ const DEFAULT_CHO_PRODUCTS: CHOProduct[] = [
     maltodextrina: 0,
     sacarosa: 0,
     cafeina: 100,
-    notas: 'Cafeína 100 mg',
+    notas: '100 mg cafeína',
   },
   {
-    nombre: 'Gel solo glucosa (30g)',
-    tipo: 'Gel',
-    cho: 30,
-    glucosa: 30,
-    fructosa: 0,
-    maltodextrina: 0,
-    sacarosa: 0,
-    cafeina: 0,
-  },
-  {
-    nombre: 'Gel alto en fructosa (30g)',
-    tipo: 'Gel',
-    cho: 30,
-    glucosa: 10,
-    fructosa: 20,
-    maltodextrina: 0,
-    sacarosa: 0,
-    cafeina: 0,
-  },
-  {
-    nombre: 'Barrita con sacarosa (30g)',
+    nombre: 'Barrita 30 g CHO',
     tipo: 'Barrita',
     cho: 30,
     glucosa: 10,
-    fructosa: 0,
+    fructosa: 10,
     maltodextrina: 0,
-    sacarosa: 20,
+    sacarosa: 10,
     cafeina: 0,
   },
 ];
@@ -100,7 +78,7 @@ const DEFAULT_DRINKS: DrinkProduct[] = [
     mlPorPorcion: 500,
     choPorPorcion: 30,
     sodioPorPorcion: 300,
-    notas: 'Aprox. 6% CHO, ~300 mg Na',
+    notas: '6 % CHO, ~300 mg Na',
   },
   {
     nombre: 'Bebida concentrada 12% (500 ml)',
@@ -108,7 +86,7 @@ const DEFAULT_DRINKS: DrinkProduct[] = [
     mlPorPorcion: 500,
     choPorPorcion: 60,
     sodioPorPorcion: 500,
-    notas: 'Aprox. 12% CHO, ~500 mg Na',
+    notas: '12 % CHO, ~500 mg Na',
   },
   {
     nombre: 'Agua (500 ml)',
@@ -116,7 +94,7 @@ const DEFAULT_DRINKS: DrinkProduct[] = [
     mlPorPorcion: 500,
     choPorPorcion: 0,
     sodioPorPorcion: 0,
-    notas: 'Sin CHO ni Na',
+    notas: 'Sin CHO ni sodio',
   },
 ];
 
@@ -125,49 +103,42 @@ const DEFAULT_ELECTROLYTES: ElectrolyteProduct[] = [
     nombre: 'Cápsula sodio 200 mg',
     tipo: 'Capsula',
     sodioPorUnidad: 200,
-    notas: '200 mg Na',
+    notas: '200 mg Na/unidad',
   },
   {
     nombre: 'Cápsula sodio 500 mg',
     tipo: 'Capsula',
     sodioPorUnidad: 500,
-    notas: '500 mg Na',
+    notas: '500 mg Na/unidad',
   },
 ];
 
 /* =========================
    Utilidades
    ========================= */
-function toMinutes(hhmm: string): number | null {
-  if (!hhmm) return null;
-  const parts = hhmm.split(':');
-  if (parts.length !== 2) return null;
-  const h = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10);
-  if (isNaN(h) || isNaN(m)) return null;
+
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map((v) => parseInt(v || '0', 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return 0;
   return h * 60 + m;
 }
-const round5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
 
-function levelFromScore(
-  score: number
-): 'Principiante' | 'Intermedio' | 'Avanzado' {
-  if (score <= 3) return 'Principiante';
-  if (score <= 7) return 'Intermedio';
-  return 'Avanzado';
-}
-
-function durationCategory(hours: number) {
+function durationCategory(hours: number): '≤2,5 h' | '2,5–4 h' | '>4 h' {
   if (hours <= 2.5) return '≤2,5 h';
   if (hours <= 4) return '2,5–4 h';
   return '>4 h';
 }
 
+function levelFromScore(score: number): 'Principiante' | 'Intermedio' | 'Avanzado' {
+  if (score <= 3) return 'Principiante';
+  if (score <= 7) return 'Intermedio';
+  return 'Avanzado';
+}
+
 function choRange(
-  level: string,
-  durCat: string
-): { low: number; high: number; label: string } | null {
-  if (!level || !durCat) return null;
+  level: 'Principiante' | 'Intermedio' | 'Avanzado',
+  durCat: '≤2,5 h' | '2,5–4 h' | '>4 h',
+): { low: number; high: number; label: string } {
   if (durCat === '≤2,5 h') {
     if (level === 'Principiante') return { low: 30, high: 45, label: '30–45' };
     if (level === 'Intermedio') return { low: 45, high: 60, label: '45–60' };
@@ -186,9 +157,9 @@ function choRange(
 
 function capByGutTraining(
   target: number,
-  durCat: string,
-  level: string,
-  gutTraining: boolean
+  durCat: '≤2,5 h' | '2,5–4 h' | '>4 h',
+  level: 'Principiante' | 'Intermedio' | 'Avanzado',
+  gutTraining: boolean,
 ): number {
   if (gutTraining) return target;
   if (durCat === '≤2,5 h') return target;
@@ -197,18 +168,22 @@ function capByGutTraining(
   return Math.min(target, 70);
 }
 
+const round5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
+
 /* =========================
    Componente principal
    ========================= */
-export default function AppCHO() {
-  /* ---------- Perfil / Nivel ---------- */
+
+export default function Page() {
+  /* Perfil */
   const [modality, setModality] = useState<Modality>('Running');
   const [durationHHMM, setDurationHHMM] = useState('03:30');
-  const [paceMinPerKm, setPaceMinPerKm] = useState(5.0); // running
-  const [speedKmh, setSpeedKmh] = useState(30); // ciclismo
+  const [paceMinPerKm, setPaceMinPerKm] = useState(5);
+  const [speedKmh, setSpeedKmh] = useState(30);
   const [temperature, setTemperature] = useState(20);
   const [gutTraining, setGutTraining] = useState(false);
 
+  /* Cuestionario nivel */
   const [qWeeks, setQWeeks] = useState(1);
   const [qSessions, setQSess] = useState(1);
   const [qHours, setQHours] = useState(1);
@@ -216,186 +191,114 @@ export default function AppCHO() {
   const [qGut, setQGut] = useState(0);
   const [qGI, setQGI] = useState(1);
 
-  const minutes = useMemo(() => toMinutes(durationHHMM) ?? 0, [durationHHMM]);
+  const minutes = useMemo(() => toMinutes(durationHHMM), [durationHHMM]);
   const hours = minutes / 60;
   const durCat = durationCategory(hours);
 
   const score = qWeeks + qSessions + qHours + qLongs + qGut + qGI;
   const level = levelFromScore(score);
   const range = choRange(level, durCat);
-  const choMid = range ? (range.low + range.high) / 2 : 0;
+  const choMid = (range.low + range.high) / 2;
   const choTarget = capByGutTraining(choMid, durCat, level, gutTraining); // g/h
 
-  /* ---------- Catálogo: CHO ---------- */
-  const [choProducts, setChoProducts] =
-    useState<CHOProduct[]>(DEFAULT_CHO_PRODUCTS);
-  const [choProductName, setChoProductName] = useState(choProducts[0].nombre);
-
-  /* ---------- Catálogo: Hidratación ---------- */
+  /* Catálogos */
+  const [choProducts, setChoProducts] = useState<CHOProduct[]>(DEFAULT_CHO_PRODUCTS);
   const [drinks, setDrinks] = useState<DrinkProduct[]>(DEFAULT_DRINKS);
-  const [electrolytes, setElectrolytes] =
-    useState<ElectrolyteProduct[]>(DEFAULT_ELECTROLYTES);
+  const [electrolytes, setElectrolytes] = useState<ElectrolyteProduct[]>(DEFAULT_ELECTROLYTES);
 
+  const [choProductName, setChoProductName] = useState(choProducts[0].nombre);
   const [drinkName, setDrinkName] = useState(drinks[0].nombre);
-  const [electrolyteName, setElectrolyteName] = useState(
-    electrolytes[0].nombre
-  );
-
-  /* ---------- Hidratación (sudor) ---------- */
-  const [sweatRateLh, setSweatRateLh] = useState(0.8); // L/h
-  const [sweatNaMgL, setSweatNaMgL] = useState(800); // mg/L
-  const [replacePct, setReplacePct] = useState(70); // % reposición (fluido y Na)
-
-  /* ----- Test práctico de tasa de sudoración (autocálculo) ----- */
-  const [sweatTestDurationHHMM, setSweatTestDurationHHMM] =
-    useState('01:00'); // duración del test
-  const sweatTestMinutes = useMemo(
-    () => toMinutes(sweatTestDurationHHMM) ?? 0,
-    [sweatTestDurationHHMM]
-  );
-  const sweatTestHours = sweatTestMinutes / 60 || 0;
-
-  const [preWeightKg, setPreWeightKg] = useState(70); // peso antes
-  const [postWeightKg, setPostWeightKg] = useState(69.5); // peso después
-
-  const [bottleEmptyG, setBottleEmptyG] = useState(200); // termo vacío
-  const [bottleFullG, setBottleFullG] = useState(700); // termo lleno antes
-  const [bottleAfterG, setBottleAfterG] = useState(300); // termo al terminar
-
-  const [urineEmptyG, setUrineEmptyG] = useState(0); // tarro orina vacío (opcional)
-  const [urineFullG, setUrineFullG] = useState(0); // tarro orina lleno (opcional)
-
-  // Pérdida de peso corporal (kg)
-  const bodyMassLossKg = Math.max(0, preWeightKg - postWeightKg);
-
-  // Líquido ingerido (L)
-  const fluidIntakeL = Math.max(0, (bottleFullG - bottleAfterG) / 1000);
-
-  // Orina producida (L)
-  const urineVolumeL =
-    urineFullG > 0 && urineEmptyG > 0
-      ? Math.max(0, (urineFullG - urineEmptyG) / 1000)
-      : 0;
-
-  // Sudor perdido (L)
-  const sweatLossL = Math.max(
-    0,
-    bodyMassLossKg + fluidIntakeL - urineVolumeL
-  );
-
-  // Tasa de sudoración (L/h)
-  const sweatRateTestLh =
-    sweatTestHours > 0 ? sweatLossL / sweatTestHours : 0;
+  const [electrolyteName, setElectrolyteName] = useState(electrolytes[0].nombre);
 
   const drink = drinks.find((d) => d.nombre === drinkName) || drinks[0];
   const electrolyte =
     electrolytes.find((e) => e.nombre === electrolyteName) || electrolytes[0];
+  const choProduct =
+    choProducts.find((p) => p.nombre === choProductName) || choProducts[0];
 
-  // Objetivos por hora
-  const fluidGoalMlH = Math.round(sweatRateLh * 1000 * (replacePct / 100)); // ml/h
-  const sodiumGoalMgH = Math.round(
-    sweatRateLh * sweatNaMgL * (replacePct / 100)
-  ); // mg/h
+  /* Hidratación por sudor */
+  const [sweatRateLh, setSweatRateLh] = useState(0.8);
+  const [sweatNaMgL, setSweatNaMgL] = useState(800);
+  const [replacePct, setReplacePct] = useState(70);
 
-  // Servicio(s) de bebida por hora para cumplir fluido
+  const fluidGoalMlH = Math.round(sweatRateLh * 1000 * (replacePct / 100));
+  const sodiumGoalMgH = Math.round(sweatRateLh * sweatNaMgL * (replacePct / 100));
+
   const drinkServH =
     drink.mlPorPorcion > 0 ? fluidGoalMlH / drink.mlPorPorcion : 0;
-  const drinkCHOgh = drink.choPorPorcion * drinkServH; // g/h aportados por bebida
-  const drinkNaMgH = drink.sodioPorPorcion * drinkServH; // mg/h aportados por bebida
+  const drinkCHOgh = drink.choPorPorcion * drinkServH;
+  const drinkNaMgH = drink.sodioPorPorcion * drinkServH;
 
-  // Déficit de sodio (si bebida no alcanza)
   const sodiumGapMgH = Math.max(0, sodiumGoalMgH - drinkNaMgH);
   const electrolytePerH =
     electrolyte.sodioPorUnidad > 0
       ? sodiumGapMgH / electrolyte.sodioPorUnidad
       : 0;
 
-  /* ---------- RESUMEN GLOBAL DE HIDRATACIÓN ---------- */
+  /* CHO neto para gel/barrita */
+  const choTargetNet = Math.max(0, choTarget - drinkCHOgh);
 
-  const totalDurationHours = hours || 0;
-
-  // Pérdida total de líquido en toda la prueba
-  const totalFluidLossL = sweatRateLh * totalDurationHours;
-
-  // Ingesta total planificada (según la bebida seleccionada)
-  const totalFluidIntakeL = (fluidGoalMlH / 1000) * totalDurationHours;
-
-  // Déficit neto de líquido
-  const fluidDeficitL = Math.max(0, totalFluidLossL - totalFluidIntakeL);
-
-  // % estimado de pérdida de peso
-  const bodyMassLossPct =
-    preWeightKg > 0 ? (fluidDeficitL / preWeightKg) * 100 : 0;
-
-  // Sodio total perdido
-  const totalNaLossMg = sweatRateLh * sweatNaMgL * totalDurationHours;
-
-  // Sodio total ingerido (bebida + cápsulas)
-  const totalNaFromDrinkMg = drinkNaMgH * totalDurationHours;
-
-  const totalNaFromCapsulesMg =
-    electrolytePerH * electrolyte.sodioPorUnidad * totalDurationHours;
-
-  const totalNaIntakeMg = totalNaFromDrinkMg + totalNaFromCapsulesMg;
-
-  // Déficit total de sodio
-  const totalNaGapMg = Math.max(0, totalNaLossMg - totalNaIntakeMg);
-
-  /* ---------- Objetivo CHO neto (para gel/barrita) ---------- */
-  const choTargetNet = Math.max(0, choTarget - drinkCHOgh); // g/h restantes
-
-  const choProduct =
-    choProducts.find((p) => p.nombre === choProductName) || choProducts[0];
-
-
-// Cálculos para resumen operativo
-const gelsPerHour =
-  choProduct.cho > 0 ? choTargetNet / choProduct.cho : 0;
-const gelsTotal =
-  choProduct.cho > 0
-    ? Math.ceil((hours * choTargetNet) / choProduct.cho)
-    : 0;
-
-const drinkTotalServ = drinkServH * hours;
-const capsulesTotal = electrolytePerH * hours;
-
-// Propuesta operativa: sorbos cada 15 min y, si aplica, cápsulas cada X min
-const drinkIntervalMin = 15;
-const drinkPerIntervalMl = (fluidGoalMlH * drinkIntervalMin) / 60;
-
-const sodiumIntervalMin =
-  electrolytePerH > 0 ? round5(60 / electrolytePerH) : 0;
-
-// Intervalo por tiempo en función de CHO por unidad y objetivo neto
-const intervalMin =
-  choTargetNet > 0 ? round5(60 * (choProduct.cho / choTargetNet)) : 0;
-
+  const intervalMin =
+    choTargetNet > 0 && choProduct.cho > 0
+      ? round5(60 * (choProduct.cho / choTargetNet))
+      : 0;
 
   const intervalKm = useMemo(() => {
-    if (intervalMin === 0) return 0;
+    if (!intervalMin) return 0;
     if (modality === 'Running') {
-      const km = intervalMin / paceMinPerKm; // min / (min/km) = km
-      return Math.round(km * 100) / 100;
-    } else {
-      const km = (speedKmh / 60) * intervalMin;
+      const km = intervalMin / paceMinPerKm;
       return Math.round(km * 100) / 100;
     }
+    const km = (speedKmh / 60) * intervalMin;
+    return Math.round(km * 100) / 100;
   }, [intervalMin, modality, paceMinPerKm, speedKmh]);
 
   const schedule = useMemo(() => {
-    const out: { idx: number; tMin: number; distKm: number }[] = [];
-    if (!intervalMin || !minutes) return out;
-    for (let i = 1; i <= 60; i++) {
+    const rows: { idx: number; tMin: number; distKm: number }[] = [];
+    if (!intervalMin || !minutes) return rows;
+    for (let i = 1; i <= 60; i += 1) {
       const t = i * intervalMin;
       if (t > minutes) break;
       const dist =
         modality === 'Running' ? t / paceMinPerKm : (speedKmh / 60) * t;
-      out.push({ idx: i, tMin: t, distKm: Math.round(dist * 100) / 100 });
+      rows.push({ idx: i, tMin: t, distKm: Math.round(dist * 100) / 100 });
     }
-    return out;
+    return rows;
   }, [intervalMin, minutes, modality, paceMinPerKm, speedKmh]);
 
-  /* ---------- Tolerancia ---------- */
+  /* Tasa de sudoración: test simple */
+  const [preWeight, setPreWeight] = useState(70);
+  const [postWeight, setPostWeight] = useState(69.2);
+  const [drinkMl, setDrinkMl] = useState(500);
+  const [urineMl, setUrineMl] = useState(0);
+  const [testDurationHHMM, setTestDurationHHMM] = useState('01:30');
+
+  const sweatRateTestLh = useMemo(() => {
+    const durMin = toMinutes(testDurationHHMM);
+    if (!durMin || durMin <= 0) return 0;
+    const deltaKg = preWeight - postWeight;
+    const lossMl = deltaKg * 1000 + drinkMl - urineMl;
+    return lossMl / (durMin / 60) / 1000;
+  }, [preWeight, postWeight, drinkMl, urineMl, testDurationHHMM]);
+
+  /* Resumen operativo */
+  const gelsPerHour =
+    choProduct.cho > 0 && choTargetNet > 0
+      ? choTargetNet / choProduct.cho
+      : 0;
+
+  const drinkIntervalMin =
+    fluidGoalMlH > 0 ? 15 : 0; // sorbos cada 15 min
+  const drinkPerIntervalMl =
+    drinkIntervalMin && fluidGoalMlH > 0
+      ? (fluidGoalMlH / 60) * drinkIntervalMin
+      : 0;
+
+  const sodiumIntervalMin =
+    electrolytePerH > 0 ? Math.round(60 / electrolytePerH) : 0;
+  const capsulesTotal = electrolytePerH * hours;
+
+  /* Tolerancia simple (solo sumar síntomas) */
   const [sx, setSx] = useState({
     nausea: 0,
     plenitud: 0,
@@ -408,20 +311,21 @@ const intervalMin =
     palpit: 0,
     ansiedad: 0,
   });
+
   const sxSup = sx.nausea + sx.plenitud + sx.reflujo;
   const sxInf = sx.hinchazon + sx.gas + sx.colico + sx.urgencia + sx.diarrea;
   const sxNeuro = sx.palpit + sx.ansiedad;
+  const frFrac =
+    choProduct.cho > 0 ? choProduct.fructosa / choProduct.cho : 0;
 
-  const frFrac = choProduct.cho ? choProduct.fructosa / choProduct.cho : 0;
   const sospechas: string[] = [];
-  if (sxInf >= 3 && frFrac >= 0.3)
-    sospechas.push('Posible malabsorción de fructosa');
+  if (sxInf >= 3 && frFrac >= 0.3) sospechas.push('Posible malabsorción de fructosa');
   if (sxSup >= 3 && choProduct.maltodextrina > 0)
     sospechas.push('Osmolaridad alta / maltodextrina');
   if (sxNeuro >= 2 && choProduct.cafeina >= 100)
     sospechas.push('Sensibilidad a cafeína');
 
-  /* ---------- Formularios para agregar productos ---------- */
+  /* Añadir productos rápido */
   const [newCHO, setNewCHO] = useState<CHOProduct>({
     nombre: '',
     tipo: 'Gel',
@@ -432,11 +336,9 @@ const intervalMin =
     sacarosa: 0,
     cafeina: 0,
   });
+
   const addCHO = () => {
-    if (!newCHO.nombre || !newCHO.cho) {
-      alert('Nombre y CHO son obligatorios');
-      return;
-    }
+    if (!newCHO.nombre || !newCHO.cho) return;
     setChoProducts((prev) => [...prev, { ...newCHO }]);
     setChoProductName(newCHO.nombre);
     setNewCHO({
@@ -458,11 +360,9 @@ const intervalMin =
     choPorPorcion: 0,
     sodioPorPorcion: 0,
   });
+
   const addDrink = () => {
-    if (!newDrink.nombre || !newDrink.mlPorPorcion) {
-      alert('Nombre y ml/porción son obligatorios');
-      return;
-    }
+    if (!newDrink.nombre || !newDrink.mlPorPorcion) return;
     setDrinks((prev) => [...prev, { ...newDrink }]);
     setDrinkName(newDrink.nombre);
     setNewDrink({
@@ -479,30 +379,30 @@ const intervalMin =
     tipo: 'Capsula',
     sodioPorUnidad: 200,
   });
+
   const addElec = () => {
-    if (!newElec.nombre || !newElec.sodioPorUnidad) {
-      alert('Nombre y mg Na/unidad obligatorios');
-      return;
-    }
+    if (!newElec.nombre || !newElec.sodioPorUnidad) return;
     setElectrolytes((prev) => [...prev, { ...newElec }]);
     setElectrolyteName(newElec.nombre);
-    setNewElec({ nombre: '', tipo: 'Capsula', sodioPorUnidad: 200 });
+    setNewElec({
+      nombre: '',
+      tipo: 'Capsula',
+      sodioPorUnidad: 200,
+    });
   };
 
-  /* ---------- UI ---------- */
+  /* UI */
 
-const handlePrintPlan = () => {
-  window.print();
-};
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold">App CHO & Hidratación – MVP</h1>
+      <h1 className="text-2xl font-bold mb-2">App CHO &amp; Hidratación – MVP</h1>
 
       {/* PERFIL / NIVEL */}
       <section className="grid md:grid-cols-2 gap-6">
+        {/* Perfil */}
         <div className="p-4 rounded-2xl shadow bg-white">
           <h2 className="text-lg font-semibold mb-3">Perfil del atleta</h2>
-          <div className="grid grid-cols-2 gap-3 items-end">
+          <div className="grid grid-cols-2 gap-3 text-sm">
             <label className="col-span-1">
               Modalidad
               <select
@@ -520,7 +420,6 @@ const handlePrintPlan = () => {
                 className="w-full border p-2 rounded"
                 value={durationHHMM}
                 onChange={(e) => setDurationHHMM(e.target.value)}
-                placeholder="hh:mm"
               />
             </label>
             {modality === 'Running' ? (
@@ -531,9 +430,7 @@ const handlePrintPlan = () => {
                   step="0.1"
                   className="w-full border p-2 rounded"
                   value={paceMinPerKm}
-                  onChange={(e) =>
-                    setPaceMinPerKm(parseFloat(e.target.value || '0'))
-                  }
+                  onChange={(e) => setPaceMinPerKm(parseFloat(e.target.value || '0'))}
                 />
               </label>
             ) : (
@@ -544,9 +441,7 @@ const handlePrintPlan = () => {
                   step="0.1"
                   className="w-full border p-2 rounded"
                   value={speedKmh}
-                  onChange={(e) =>
-                    setSpeedKmh(parseFloat(e.target.value || '0'))
-                  }
+                  onChange={(e) => setSpeedKmh(parseFloat(e.target.value || '0'))}
                 />
               </label>
             )}
@@ -556,12 +451,10 @@ const handlePrintPlan = () => {
                 type="number"
                 className="w-full border p-2 rounded"
                 value={temperature}
-                onChange={(e) =>
-                  setTemperature(parseFloat(e.target.value || '0'))
-                }
+                onChange={(e) => setTemperature(parseFloat(e.target.value || '0'))}
               />
             </label>
-            <label className="col-span-2 flex items-center gap-2">
+            <label className="col-span-2 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={gutTraining}
@@ -570,27 +463,25 @@ const handlePrintPlan = () => {
               Entrenamiento intestinal realizado
             </label>
           </div>
-          <div className="mt-4 text-sm bg-gray-50 p-3 rounded">
-            <div>
-              <span className="font-semibold">Duración:</span>{' '}
-              {hours.toFixed(2)} h ({durCat})
-            </div>
+          <div className="mt-3 text-xs bg-gray-50 p-2 rounded">
+            Duración: <b>{hours.toFixed(2)} h</b> ({durCat})
           </div>
         </div>
 
+        {/* Cuestionario nivel */}
         <div className="p-4 rounded-2xl shadow bg-white">
           <h2 className="text-lg font-semibold mb-3">Cuestionario de nivel</h2>
-          <div className="grid grid-cols-2 gap-3 items-end text-sm">
+          <div className="grid grid-cols-2 gap-3 text-sm">
             <label>
               Semanas entrenando (&gt;3/sem)
               <select
                 className="w-full border p-2 rounded"
                 value={qWeeks}
-                onChange={(e) => setQWeeks(parseInt(e.target.value))}
+                onChange={(e) => setQWeeks(parseInt(e.target.value, 10))}
               >
-                <option value={0}>{'<6 (0)'}</option>
-                <option value={1}>{'6–12 (1)'}</option>
-                <option value={2}>{'>12 (2)'}</option>
+                <option value={0}>&lt;6 (0)</option>
+                <option value={1}>6–12 (1)</option>
+                <option value={2}>&gt;12 (2)</option>
               </select>
             </label>
             <label>
@@ -598,11 +489,11 @@ const handlePrintPlan = () => {
               <select
                 className="w-full border p-2 rounded"
                 value={qSessions}
-                onChange={(e) => setQSess(parseInt(e.target.value))}
+                onChange={(e) => setQSess(parseInt(e.target.value, 10))}
               >
-                <option value={0}>{'≤2 (0)'}</option>
-                <option value={1}>{'3–4 (1)'}</option>
-                <option value={2}>{'≥5 (2)'}</option>
+                <option value={0}>≤2 (0)</option>
+                <option value={1}>3–4 (1)</option>
+                <option value={2}>≥5 (2)</option>
               </select>
             </label>
             <label>
@@ -610,11 +501,11 @@ const handlePrintPlan = () => {
               <select
                 className="w-full border p-2 rounded"
                 value={qHours}
-                onChange={(e) => setQHours(parseInt(e.target.value))}
+                onChange={(e) => setQHours(parseInt(e.target.value, 10))}
               >
-                <option value={0}>{'<3 (0)'}</option>
-                <option value={1}>{'3–6 (1)'}</option>
-                <option value={2}>{'>6 (2)'}</option>
+                <option value={0}>&lt;3 (0)</option>
+                <option value={1}>3–6 (1)</option>
+                <option value={2}>&gt;6 (2)</option>
               </select>
             </label>
             <label>
@@ -622,7 +513,7 @@ const handlePrintPlan = () => {
               <select
                 className="w-full border p-2 rounded"
                 value={qLongs}
-                onChange={(e) => setQLongs(parseInt(e.target.value))}
+                onChange={(e) => setQLongs(parseInt(e.target.value, 10))}
               >
                 <option value={0}>Ninguno (0)</option>
                 <option value={1}>1–2 (1)</option>
@@ -634,7 +525,7 @@ const handlePrintPlan = () => {
               <select
                 className="w-full border p-2 rounded"
                 value={qGut}
-                onChange={(e) => setQGut(parseInt(e.target.value))}
+                onChange={(e) => setQGut(parseInt(e.target.value, 10))}
               >
                 <option value={0}>No (0)</option>
                 <option value={2}>Sí (2)</option>
@@ -645,7 +536,7 @@ const handlePrintPlan = () => {
               <select
                 className="w-full border p-2 rounded"
                 value={qGI}
-                onChange={(e) => setQGI(parseInt(e.target.value))}
+                onChange={(e) => setQGI(parseInt(e.target.value, 10))}
               >
                 <option value={0}>Frecuente (0)</option>
                 <option value={1}>Ocasional (1)</option>
@@ -653,209 +544,99 @@ const handlePrintPlan = () => {
               </select>
             </label>
           </div>
-          <div className="mt-3 text-sm bg-gray-50 p-3 rounded">
+          <div className="mt-3 text-xs bg-gray-50 p-2 rounded space-y-1">
             <div>
-              <span className="font-semibold">Puntaje:</span> {score}
+              Puntaje: <b>{score}</b>
             </div>
             <div>
-              <span className="font-semibold">Nivel:</span> {level}
+              Nivel: <b>{level}</b>
             </div>
             <div>
-              <span className="font-semibold">Rango sugerido CHO:</span>{' '}
-              {range?.label ?? '—'} g/h
+              Rango sugerido CHO:{' '}
+              <b>{range.label}</b> g/h
             </div>
             <div>
-              <span className="font-semibold">CHO objetivo:</span>{' '}
-              {choTarget ? `${choTarget.toFixed(0)} g/h` : '—'}
+              CHO objetivo (ajustado por entrenamiento intestinal):{' '}
+              <b>{choTarget.toFixed(0)} g/h</b>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TEST TASA DE SUDORACIÓN */}
+      {/* TEST DE SUDORACIÓN SIMPLE */}
       <section className="p-4 rounded-2xl shadow bg-white">
-        <h2 className="text-lg font-semibold mb-3">
-          Test práctico de tasa de sudoración
+        <h2 className="text-lg font-semibold mb-2">
+          Test rápido de tasa de sudoración
         </h2>
-        <p className="text-sm text-gray-600 mb-3">
-          Esta prueba casera te da una idea de cuánta agua pierdes por hora en
-          condiciones similares a tu entrenamiento. Ideal repetirla en días de
-          clima parecido a tus competencias. Usa siempre la misma báscula.
+        <p className="text-sm text-gray-700 mb-3">
+          Protocolo sencillo: pésate antes y después, mide lo que bebes y, si es
+          posible, lo que orinas. Usa un entrenamiento de ≥45–60 min con
+          condiciones similares a la competencia.
         </p>
-        <ol className="text-xs text-gray-600 mb-4 list-decimal list-inside space-y-1">
-          <li>Pésate antes de entrenar, con la menor ropa posible.</li>
-          <li>
-            Pesa el termo vacío y luego el termo lleno antes de salir (anota
-            ambos pesos).
-          </li>
-          <li>
-            Entrena el tiempo indicado usando solo ese termo para hidratarte.
-          </li>
-          <li>
-            Al terminar, vuelve a pesarte y pesa de nuevo el termo con el
-            líquido que sobró.
-          </li>
-          <li>
-            Opcional: si quieres ser más preciso, recoge la orina en un tarro,
-            pésalo vacío y luego lleno.
-          </li>
-        </ol>
-
-        <div className="grid md:grid-cols-4 gap-3 items-end text-sm">
-          {/* Duración y pesos corporales */}
-          <label>
-            Duración del test (hh:mm)
-            <input
-              className="w-full border p-2 rounded"
-              value={sweatTestDurationHHMM}
-              onChange={(e) => setSweatTestDurationHHMM(e.target.value)}
-            />
-          </label>
+        <div className="grid md:grid-cols-5 gap-3 text-sm">
           <label>
             Peso antes (kg)
             <input
               type="number"
-              step="0.1"
               className="w-full border p-2 rounded"
-              value={preWeightKg}
-              onChange={(e) =>
-                setPreWeightKg(parseFloat(e.target.value || '0'))
-              }
+              value={preWeight}
+              onChange={(e) => setPreWeight(parseFloat(e.target.value || '0'))}
             />
           </label>
           <label>
             Peso después (kg)
             <input
               type="number"
-              step="0.1"
               className="w-full border p-2 rounded"
-              value={postWeightKg}
-              onChange={(e) =>
-                setPostWeightKg(parseFloat(e.target.value || '0'))
-              }
-            />
-          </label>
-          <div className="bg-gray-50 p-2 rounded text-xs">
-            <div>
-              Pérdida de peso: <b>{bodyMassLossKg.toFixed(2)}</b> kg{' '}
-              {preWeightKg > 0 && postWeightKg > 0 ? (
-                <>
-                  (
-                  {(
-                    ((postWeightKg - preWeightKg) / preWeightKg) *
-                    100
-                  ).toFixed(1)}
-                  %)
-                </>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Termo / hidratante */}
-          <label>
-            Termo vacío (g)
-            <input
-              type="number"
-              className="w-full border p-2 rounded"
-              value={bottleEmptyG}
-              onChange={(e) =>
-                setBottleEmptyG(parseFloat(e.target.value || '0'))
-              }
+              value={postWeight}
+              onChange={(e) => setPostWeight(parseFloat(e.target.value || '0'))}
             />
           </label>
           <label>
-            Termo lleno antes (g)
+            Líquido ingerido (ml)
             <input
               type="number"
               className="w-full border p-2 rounded"
-              value={bottleFullG}
-              onChange={(e) =>
-                setBottleFullG(parseFloat(e.target.value || '0'))
-              }
+              value={drinkMl}
+              onChange={(e) => setDrinkMl(parseFloat(e.target.value || '0'))}
             />
           </label>
           <label>
-            Termo al terminar (g)
+            Orina (ml, opcional)
             <input
               type="number"
               className="w-full border p-2 rounded"
-              value={bottleAfterG}
-              onChange={(e) =>
-                setBottleAfterG(parseFloat(e.target.value || '0'))
-              }
-            />
-          </label>
-          <div className="bg-gray-50 p-2 rounded text-xs">
-            <div>
-              Líquido ingerido: <b>{(fluidIntakeL * 1000).toFixed(0)}</b> ml
-            </div>
-          </div>
-
-          {/* Orina opcional */}
-          <label>
-            Tarro orina vacío (g) (opcional)
-            <input
-              type="number"
-              className="w-full border p-2 rounded"
-              value={urineEmptyG}
-              onChange={(e) =>
-                setUrineEmptyG(parseFloat(e.target.value || '0'))
-              }
+              value={urineMl}
+              onChange={(e) => setUrineMl(parseFloat(e.target.value || '0'))}
             />
           </label>
           <label>
-            Tarro orina lleno (g) (opcional)
+            Duración prueba (hh:mm)
             <input
-              type="number"
               className="w-full border p-2 rounded"
-              value={urineFullG}
-              onChange={(e) =>
-                setUrineFullG(parseFloat(e.target.value || '0'))
-              }
+              value={testDurationHHMM}
+              onChange={(e) => setTestDurationHHMM(e.target.value)}
             />
           </label>
-          <div className="bg-gray-50 p-2 rounded text-xs">
-            <div>
-              Orina estimada: <b>{(urineVolumeL * 1000).toFixed(0)}</b> ml
-            </div>
-          </div>
-
-          {/* Resultado final */}
-          <div className="bg-gray-100 p-3 rounded col-span-4 md:col-span-2 text-sm">
-            <div>
-              Pérdida total de sudor:{' '}
-              <b>{sweatLossL > 0 ? sweatLossL.toFixed(2) : '0.00'}</b> L
-            </div>
-            <div>
-              Tasa de sudoración:{' '}
-              <b>
-                {sweatRateTestLh > 0 ? sweatRateTestLh.toFixed(2) : '0.00'}
-              </b>{' '}
-              L/h
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              Valores típicos en deportistas bien entrenados suelen estar entre
-              ~0,5 y 1,5 L/h, pero pueden ser mayores en calor intenso.
-            </p>
-            <button
-              type="button"
-              className="mt-2 px-3 py-1 border rounded text-xs"
-              onClick={() =>
-                sweatRateTestLh > 0 && setSweatRateLh(sweatRateTestLh)
-              }
-            >
-              Usar este valor como tasa de sudoración en la app
-            </button>
-          </div>
+        </div>
+        <div className="mt-3 text-sm bg-gray-50 p-3 rounded">
+          Tasa de sudoración estimada:{' '}
+          <b>{sweatRateTestLh > 0 ? sweatRateTestLh.toFixed(2) : '0.00'} L/h</b>
+          <p className="text-xs text-gray-600 mt-1">
+            Valores típicos en deportistas bien entrenados suelen estar entre
+            ~0,5 y 1,5 L/h, pero pueden ser mayores en calor intenso. Puedes
+            usar este valor como referencia para &quot;Tasa de sudoración (L/h)&quot;
+            en la sección de hidratación.
+          </p>
         </div>
       </section>
 
-      {/* HIDRATACIÓN por sudor */}
+      {/* HIDRATACIÓN */}
       <section className="p-4 rounded-2xl shadow bg-white">
-        <h2 className="text-lg font-semibold mb-3">
+        <h2 className="text-lg font-semibold mb-2">
           Hidratación (tasa de sudoración y sodio)
         </h2>
-        <div className="grid md:grid-cols-4 gap-3 items-end text-sm">
+        <div className="grid md:grid-cols-4 gap-3 text-sm">
           <label>
             Tasa de sudoración (L/h)
             <input
@@ -863,9 +644,7 @@ const handlePrintPlan = () => {
               step="0.1"
               className="w-full border p-2 rounded"
               value={sweatRateLh}
-              onChange={(e) =>
-                setSweatRateLh(parseFloat(e.target.value || '0'))
-              }
+              onChange={(e) => setSweatRateLh(parseFloat(e.target.value || '0'))}
             />
           </label>
           <label>
@@ -888,7 +667,7 @@ const handlePrintPlan = () => {
               onChange={(e) => setReplacePct(parseFloat(e.target.value || '0'))}
             />
           </label>
-          <div className="bg-gray-50 p-2 rounded">
+          <div className="bg-gray-50 p-3 rounded text-sm">
             <div>
               Fluido objetivo: <b>{fluidGoalMlH}</b> ml/h
             </div>
@@ -896,7 +675,6 @@ const handlePrintPlan = () => {
               Sodio objetivo: <b>{sodiumGoalMgH}</b> mg/h
             </div>
           </div>
-
           <label className="col-span-2">
             Bebida
             <select
@@ -905,158 +683,99 @@ const handlePrintPlan = () => {
               onChange={(e) => setDrinkName(e.target.value)}
             >
               {drinks.map((d) => (
-                <option key={d.nombre} value={d.nombre}>
-                  {d.nombre}
-                </option>
+                <option key={d.nombre}>{d.nombre}</option>
               ))}
             </select>
           </label>
           <label className="col-span-2">
-            Cápsula/electrolito (opcional para cubrir déficit de Na)
+            Cápsula/electrolito (opcional)
             <select
               className="w-full border p-2 rounded"
               value={electrolyteName}
               onChange={(e) => setElectrolyteName(e.target.value)}
             >
               {electrolytes.map((el) => (
-                <option key={el.nombre} value={el.nombre}>
-                  {el.nombre}
-                </option>
+                <option key={el.nombre}>{el.nombre}</option>
               ))}
             </select>
           </label>
-
-          <div className="col-span-4 grid md:grid-cols-4 gap-3 bg-gray-50 p-3 rounded">
-            <div>
-              Porciones bebida/h: <b>{drinkServH.toFixed(2)}</b>
-            </div>
-            <div>
-              CHO bebida: <b>{drinkCHOgh.toFixed(0)}</b> g/h
-            </div>
-            <div>
-              Na bebida: <b>{drinkNaMgH.toFixed(0)}</b> mg/h
-            </div>
-            <div>
-              Déficit Na: <b>{sodiumGapMgH.toFixed(0)}</b> mg/h → Cápsulas/h:{' '}
-              <b>{electrolytePerH.toFixed(2)}</b>
-            </div>
-          </div>
         </div>
-
-        {/* RESUMEN GLOBAL */}
-        <div className="mt-3 bg-gray-50 p-3 rounded text-xs space-y-1">
-          <div className="font-semibold text-sm">
-            Resumen para toda la prueba
-          </div>
-
+        <div className="mt-3 grid md:grid-cols-4 gap-3 text-sm bg-gray-50 p-3 rounded">
           <div>
-            Pérdida total de líquido estimada:{' '}
-            <b>{totalFluidLossL.toFixed(2)}</b> L
+            Porciones bebida/h: <b>{drinkServH.toFixed(2)}</b>
           </div>
-
           <div>
-            Ingesta total planificada:{' '}
-            <b>{totalFluidIntakeL.toFixed(2)}</b> L
+            CHO bebida: <b>{drinkCHOgh.toFixed(0)}</b> g/h
           </div>
-
           <div>
-            Déficit neto de líquido:{' '}
-            <b>{fluidDeficitL.toFixed(2)}</b> L
-            {bodyMassLossPct > 0 && (
-              <>
-                {' '}
-                (~<b>{bodyMassLossPct.toFixed(1)}%</b> del peso corporal)
-              </>
-            )}
+            Na bebida: <b>{drinkNaMgH.toFixed(0)}</b> mg/h
           </div>
-
-          <div className="mt-1">
-            Sodio total perdido: <b>{totalNaLossMg.toFixed(0)}</b> mg
-          </div>
-
           <div>
-            Sodio total ingerido: <b>{totalNaIntakeMg.toFixed(0)}</b> mg
+            Déficit Na: <b>{sodiumGapMgH.toFixed(0)}</b> mg/h → Cápsulas/h:{' '}
+            <b>{electrolytePerH.toFixed(2)}</b>
           </div>
-
-          <div>
-            Déficit total de sodio:{' '}
-            <b>{totalNaGapMg.toFixed(0)}</b> mg
-          </div>
-
-          <p className="mt-2 text-[11px] text-gray-600 leading-tight">
-            Como referencia general, mantener la pérdida de peso por debajo
-            del 2–3% suele ser razonable en muchas guías, pero debe ajustarse
-            de forma individual.
-          </p>
         </div>
       </section>
 
-      {/* PLAN DE CARRERA (CHO neto) */}
+      {/* PLAN DE COMPETENCIA */}
       <section className="p-4 rounded-2xl shadow bg-white">
-        <h2 className="text-lg font-semibold mb-3">
-          Plan de competencia (CHO neto para gel/barrita)
+        <h2 className="text-lg font-semibold mb-2">
+          Plan de competencia (CHO neto con geles/barritas)
         </h2>
-        <div className="grid md:grid-cols-4 gap-3 items-end text-sm">
+        <div className="grid md:grid-cols-4 gap-3 text-sm">
           <label className="col-span-2">
-            Producto CHO (gel/barrita)
+            Producto CHO
             <select
               className="w-full border p-2 rounded"
               value={choProductName}
               onChange={(e) => setChoProductName(e.target.value)}
             >
               {choProducts.map((p) => (
-                <option key={p.nombre} value={p.nombre}>
-                  {p.nombre}
-                </option>
+                <option key={p.nombre}>{p.nombre}</option>
               ))}
             </select>
           </label>
           <div className="bg-gray-50 p-2 rounded">
-            CHO objetivo total: <b>{(hours * choTarget).toFixed(0)}</b> g
+            CHO total objetivo:{' '}
+            <b>{(hours * choTarget).toFixed(0)} g</b>
           </div>
           <div className="bg-gray-50 p-2 rounded">
-            CHO bebida: <b>{(hours * drinkCHOgh).toFixed(0)}</b> g
+            CHO bebida:{' '}
+            <b>{(hours * drinkCHOgh).toFixed(0)} g</b>
           </div>
           <div className="bg-gray-50 p-2 rounded col-span-2">
-            CHO a cubrir (neto): <b>{(hours * choTargetNet).toFixed(0)}</b> g
+            CHO a cubrir con gel/barrita:{' '}
+            <b>{(hours * choTargetNet).toFixed(0)} g</b>
           </div>
           <div className="bg-gray-50 p-2 rounded">
-            Intervalo: <b>{intervalMin || '—'}</b> min
+            Intervalo aprox:{' '}
+            <b>{intervalMin || '—'} min</b> (
+            {intervalKm ? `${intervalKm} km` : 'según ritmo'})
           </div>
           <div className="bg-gray-50 p-2 rounded">
-            Intervalo: <b>{intervalKm || '—'}</b> km
-          </div>
-          <div className="bg-gray-50 p-2 rounded">
-            Unidades totales (≈):{' '}
+            Unidades totales (aprox):{' '}
             <b>
-              {choProduct.cho
+              {choProduct.cho > 0
                 ? Math.ceil((hours * choTargetNet) / choProduct.cho)
                 : '—'}
             </b>
           </div>
         </div>
-
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gray-100">
-                {[
-                  '#',
-                  'Tiempo (min)',
-                  'Distancia acumulada (km)',
-                  'Producto',
-                  'Unidades',
-                  'CHO acumulado (g)',
-                ].map((h) => (
-                  <th key={h} className="p-2 text-left">
-                    {h}
-                  </th>
-                ))}
+                <th className="p-2 text-left">#</th>
+                <th className="p-2 text-left">Tiempo (min)</th>
+                <th className="p-2 text-left">Distancia acumulada (km)</th>
+                <th className="p-2 text-left">Producto</th>
+                <th className="p-2 text-left">Unidades</th>
+                <th className="p-2 text-left">CHO acumulado (g)</th>
               </tr>
             </thead>
             <tbody>
               {schedule.map((row, i) => (
-                <tr key={i} className="border-b">
+                <tr key={row.idx} className="border-b">
                   <td className="p-2">{row.idx}</td>
                   <td className="p-2">{row.tMin}</td>
                   <td className="p-2">{row.distKm}</td>
@@ -1074,7 +793,7 @@ const handlePrintPlan = () => {
 
       {/* TOLERANCIA */}
       <section className="p-4 rounded-2xl shadow bg-white">
-        <h2 className="text-lg font-semibold mb-3">
+        <h2 className="text-lg font-semibold mb-2">
           Tolerancia e intolerancias (screening)
         </h2>
         <div className="grid md:grid-cols-5 gap-3 text-sm">
@@ -1092,7 +811,7 @@ const handlePrintPlan = () => {
               ['Ansiedad', 'ansiedad'],
             ] as const
           ).map(([label, key]) => (
-            <label key={key} className="flex flex-col">
+            <label key={key} className="flex flex-col text-xs">
               {label} (0–3)
               <input
                 type="number"
@@ -1101,52 +820,51 @@ const handlePrintPlan = () => {
                 className="border p-2 rounded"
                 value={(sx as any)[key]}
                 onChange={(e) =>
-                  setSx((s) => ({
-                    ...s,
+                  setSx((prev) => ({
+                    ...prev,
                     [key]: Math.max(
                       0,
-                      Math.min(3, parseInt(e.target.value || '0'))
+                      Math.min(3, parseInt(e.target.value || '0', 10)),
                     ),
-                  }))}
+                  }))
+                }
               />
             </label>
           ))}
         </div>
-        <div className="mt-3 text-sm bg-gray-50 p-3 rounded">
+        <div className="mt-3 text-xs bg-gray-50 p-3 rounded space-y-1">
           <div>
             Sup: <b>{sxSup}</b> | Inf: <b>{sxInf}</b> | Neuro: <b>{sxNeuro}</b>{' '}
-            | Fructosa del producto: <b>{(frFrac * 100).toFixed(0)}%</b>
+            | Fructosa del producto:{' '}
+            <b>{(frFrac * 100).toFixed(0)}%</b>
           </div>
-          <div className="mt-2">
-            <span className="font-semibold">Sospechas: </span>
+          <div>
+            Sospechas:{' '}
             {sospechas.length ? sospechas.join(', ') : '—'}
           </div>
-          <div className="mt-1">
-            <span className="font-semibold">Sugerencias:</span>
-            {sospechas.includes('Posible malabsorción de fructosa')
-              ? ' elija gel/bebida sin fructosa o con menor %'
-              : null}
-            {sospechas.includes('Osmolaridad alta / maltodextrina')
-              ? ' • baje concentración (6–8%) o prefiera geles sin maltodextrina'
-              : null}
-            {sospechas.includes('Sensibilidad a cafeína')
-              ? ' • use versión sin cafeína o reduzca dosis'
-              : null}
+          <div>
+            Sugerencias rápidas:{' '}
+            {sospechas.includes('Posible malabsorción de fructosa') &&
+              'Elegir gel/bebida con menos fructosa o sin ella. '}
+            {sospechas.includes('Osmolaridad alta / maltodextrina') &&
+              'Bajar concentración de CHO (6–8 %) o cambiar a productos menos concentrados. '}
+            {sospechas.includes('Sensibilidad a cafeína') &&
+              'Reducir o eliminar la cafeína antes y durante la prueba.'}
+            {!sospechas.length && 'Sin señales claras; seguir monitorizando en entrenamientos.'}
           </div>
         </div>
       </section>
 
-      {/* CATÁLOGO: Añadir productos */}
+      {/* CATÁLOGO RÁPIDO */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-3">
-          Catálogo de productos (añadir/editar en vivo)
+          Catálogo de productos (edición rápida)
         </h2>
-
         <div className="mb-4">
-          <h3 className="font-semibold mb-2">
+          <h3 className="font-semibold mb-1 text-sm">
             Añadir producto CHO (gel/barrita)
           </h3>
-          <div className="grid md:grid-cols-6 gap-2 text-sm">
+          <div className="grid md:grid-cols-6 gap-2 text-xs">
             <input
               className="border p-2 rounded"
               placeholder="Nombre"
@@ -1172,7 +890,9 @@ const handlePrintPlan = () => {
               type="number"
               placeholder="CHO g/unid"
               value={newCHO.cho}
-              onChange={(e) => setNewCHO({ ...newCHO, cho: +e.target.value })}
+              onChange={(e) =>
+                setNewCHO({ ...newCHO, cho: parseFloat(e.target.value || '0') })
+              }
             />
             <input
               className="border p-2 rounded"
@@ -1180,7 +900,10 @@ const handlePrintPlan = () => {
               placeholder="Glucosa g"
               value={newCHO.glucosa}
               onChange={(e) =>
-                setNewCHO({ ...newCHO, glucosa: +e.target.value })
+                setNewCHO({
+                  ...newCHO,
+                  glucosa: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <input
@@ -1189,7 +912,10 @@ const handlePrintPlan = () => {
               placeholder="Fructosa g"
               value={newCHO.fructosa}
               onChange={(e) =>
-                setNewCHO({ ...newCHO, fructosa: +e.target.value })
+                setNewCHO({
+                  ...newCHO,
+                  fructosa: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <input
@@ -1198,7 +924,10 @@ const handlePrintPlan = () => {
               placeholder="Maltodex g"
               value={newCHO.maltodextrina}
               onChange={(e) =>
-                setNewCHO({ ...newCHO, maltodextrina: +e.target.value })
+                setNewCHO({
+                  ...newCHO,
+                  maltodextrina: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <input
@@ -1207,7 +936,10 @@ const handlePrintPlan = () => {
               placeholder="Sacarosa g"
               value={newCHO.sacarosa}
               onChange={(e) =>
-                setNewCHO({ ...newCHO, sacarosa: +e.target.value })
+                setNewCHO({
+                  ...newCHO,
+                  sacarosa: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <input
@@ -1216,18 +948,25 @@ const handlePrintPlan = () => {
               placeholder="Cafeína mg"
               value={newCHO.cafeina}
               onChange={(e) =>
-                setNewCHO({ ...newCHO, cafeina: +e.target.value })
+                setNewCHO({
+                  ...newCHO,
+                  cafeina: parseFloat(e.target.value || '0'),
+                })
               }
             />
-            <button className="border p-2 rounded col-span-2" onClick={addCHO}>
+            <button
+              type="button"
+              className="border p-2 rounded col-span-2"
+              onClick={addCHO}
+            >
               Añadir CHO
             </button>
           </div>
         </div>
 
         <div className="mb-4">
-          <h3 className="font-semibold mb-2">Añadir bebida</h3>
-          <div className="grid md:grid-cols-6 gap-2 text-sm">
+          <h3 className="font-semibold mb-1 text-sm">Añadir bebida</h3>
+          <div className="grid md:grid-cols-6 gap-2 text-xs">
             <input
               className="border p-2 rounded"
               placeholder="Nombre"
@@ -1242,7 +981,10 @@ const handlePrintPlan = () => {
               placeholder="ml/porción"
               value={newDrink.mlPorPorcion}
               onChange={(e) =>
-                setNewDrink({ ...newDrink, mlPorPorcion: +e.target.value })
+                setNewDrink({
+                  ...newDrink,
+                  mlPorPorcion: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <input
@@ -1251,7 +993,10 @@ const handlePrintPlan = () => {
               placeholder="CHO g/porción"
               value={newDrink.choPorPorcion}
               onChange={(e) =>
-                setNewDrink({ ...newDrink, choPorPorcion: +e.target.value })
+                setNewDrink({
+                  ...newDrink,
+                  choPorPorcion: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <input
@@ -1260,11 +1005,18 @@ const handlePrintPlan = () => {
               placeholder="Na mg/porción"
               value={newDrink.sodioPorPorcion}
               onChange={(e) =>
-                setNewDrink({ ...newDrink, sodioPorPorcion: +e.target.value })
+                setNewDrink({
+                  ...newDrink,
+                  sodioPorPorcion: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <div className="col-span-2 flex items-center">
-              <button className="border p-2 rounded w-full" onClick={addDrink}>
+              <button
+                type="button"
+                className="border p-2 rounded w-full"
+                onClick={addDrink}
+              >
                 Añadir bebida
               </button>
             </div>
@@ -1272,8 +1024,10 @@ const handlePrintPlan = () => {
         </div>
 
         <div className="mb-4">
-          <h3 className="font-semibold mb-2">Añadir cápsula/electrolito</h3>
-          <div className="grid md:grid-cols-6 gap-2 text-sm">
+          <h3 className="font-semibold mb-1 text-sm">
+            Añadir cápsula/electrolito
+          </h3>
+          <div className="grid md:grid-cols-6 gap-2 text-xs">
             <input
               className="border p-2 rounded"
               placeholder="Nombre"
@@ -1288,39 +1042,40 @@ const handlePrintPlan = () => {
               placeholder="Na mg/unidad"
               value={newElec.sodioPorUnidad}
               onChange={(e) =>
-                setNewElec({ ...newElec, sodioPorUnidad: +e.target.value })
+                setNewElec({
+                  ...newElec,
+                  sodioPorUnidad: parseFloat(e.target.value || '0'),
+                })
               }
             />
             <div className="col-span-2 flex items-center">
-              <button className="border p-2 rounded w-full" onClick={addElec}>
+              <button
+                type="button"
+                className="border p-2 rounded w-full"
+                onClick={addElec}
+              >
                 Añadir electrolito
               </button>
             </div>
           </div>
         </div>
 
-        {/* Vistas rápidas de catálogos */}
-        <div className="grid md:grid-cols-2 gap-4">
+        {/* Vista rápida catálogos */}
+        <div className="grid md:grid-cols-2 gap-4 text-xs">
           <div>
-            <h4 className="font-semibold mb-2">Catálogo CHO</h4>
+            <h4 className="font-semibold mb-1">Catálogo CHO</h4>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-xs">
                 <thead>
                   <tr className="bg-gray-100">
-                    {[
-                      'Producto',
-                      'Tipo',
-                      'CHO',
-                      'Glucosa',
-                      'Fructosa',
-                      'Maltodex',
-                      'Sacarosa',
-                      'Cafeína',
-                    ].map((h) => (
-                      <th key={h} className="p-2 text-left">
-                        {h}
-                      </th>
-                    ))}
+                    <th className="p-2 text-left">Producto</th>
+                    <th className="p-2 text-left">Tipo</th>
+                    <th className="p-2 text-left">CHO</th>
+                    <th className="p-2 text-left">Glucosa</th>
+                    <th className="p-2 text-left">Fructosa</th>
+                    <th className="p-2 text-left">Maltodex</th>
+                    <th className="p-2 text-left">Sacarosa</th>
+                    <th className="p-2 text-left">Cafeína</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1341,18 +1096,15 @@ const handlePrintPlan = () => {
             </div>
           </div>
           <div>
-            <h4 className="font-semibold mb-2">Catálogo Hidratación</h4>
+            <h4 className="font-semibold mb-1">Catálogo hidratación</h4>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-xs">
                 <thead>
                   <tr className="bg-gray-100">
-                    {['Bebida', 'ml/porción', 'CHO/porción', 'Na/porción'].map(
-                      (h) => (
-                        <th key={h} className="p-2 text-left">
-                          {h}
-                        </th>
-                      )
-                    )}
+                    <th className="p-2 text-left">Bebida</th>
+                    <th className="p-2 text-left">ml/porción</th>
+                    <th className="p-2 text-left">CHO/porción</th>
+                    <th className="p-2 text-left">Na/porción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1367,14 +1119,11 @@ const handlePrintPlan = () => {
                 </tbody>
               </table>
               <div className="mt-3" />
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-xs">
                 <thead>
                   <tr className="bg-gray-100">
-                    {['Electrolito', 'Na/unidad'].map((h) => (
-                      <th key={h} className="p-2 text-left">
-                        {h}
-                      </th>
-                    ))}
+                    <th className="p-2 text-left">Electrolito</th>
+                    <th className="p-2 text-left">Na/unidad</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1391,39 +1140,32 @@ const handlePrintPlan = () => {
         </div>
       </section>
 
-
-{/* RESUMEN OPERATIVO */}
-
-      {/* RESUMEN OPERATIVO DEL PLAN */}
+      {/* RESUMEN OPERATIVO */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Resumen operativo de hidratación y carbohidratos
         </h2>
         <p className="text-sm text-gray-700 mb-3">
-          Objetivo práctico del plan para esta sesión o competencia. Los
-          valores son aproximados y deben probarse siempre primero en
-          entrenamiento.
+          Objetivo práctico del plan para esta sesión o competencia. Los valores
+          son aproximados y deben probarse primero en entrenamiento.
         </p>
-
-        {/* Resumen numérico de objetivos */}
         <div className="grid md:grid-cols-3 gap-3 text-sm mb-4">
           <div className="bg-gray-50 rounded-xl p-3">
             <h3 className="font-semibold mb-1 text-gray-800">Carbohidratos</h3>
             <p>
               Rango sugerido:{' '}
-              <b>{range?.label ?? '—'} g/h</b>. Plan actual:{' '}
+              <b>{range.label} g/h</b>. Plan actual:{' '}
               <b>{choTarget.toFixed(0)} g/h</b>.
             </p>
             {choTargetNet > 0 && (
               <p>
                 De ese total, la bebida aporta{' '}
-                <b>{drinkCHOgh.toFixed(0)} g/h</b> y el resto se planifica con
+                <b>{drinkCHOgh.toFixed(0)} g/h</b> y el resto se cubre con
                 geles/barritas (~<b>{gelsPerHour.toFixed(1)} unid/h</b> de{' '}
                 <b>{choProduct.nombre}</b>).
               </p>
             )}
           </div>
-
           <div className="bg-gray-50 rounded-xl p-3">
             <h3 className="font-semibold mb-1 text-gray-800">Hidratación</h3>
             <p>
@@ -1431,14 +1173,12 @@ const handlePrintPlan = () => {
               <b>{sweatRateLh.toFixed(2)} L/h</b>.
             </p>
             <p>
-              Objetivo de ingesta:{' '}
-              <b>{fluidGoalMlH}</b> ml/h con{' '}
+              Objetivo de ingesta: <b>{fluidGoalMlH} ml/h</b> con{' '}
               <b>{drink.nombre}</b> (≈{' '}
               <b>{Math.round(drinkCHOgh)}</b> g CHO/h y{' '}
               <b>{Math.round(drinkNaMgH)}</b> mg Na/h).
             </p>
           </div>
-
           <div className="bg-gray-50 rounded-xl p-3">
             <h3 className="font-semibold mb-1 text-gray-800">Sodio</h3>
             <p>
@@ -1462,7 +1202,6 @@ const handlePrintPlan = () => {
           </div>
         </div>
 
-        {/* Cuadro operativo: qué hacer y cuándo */}
         <h3 className="text-sm font-semibold mb-2">
           Cuadro operativo (qué hacer durante la sesión)
         </h3>
@@ -1496,7 +1235,6 @@ const handlePrintPlan = () => {
                   )}
                 </td>
               </tr>
-
               <tr className="border-b">
                 <td className="p-2 font-semibold">Hidratación</td>
                 <td className="p-2">
@@ -1518,7 +1256,6 @@ const handlePrintPlan = () => {
                   )}
                 </td>
               </tr>
-
               <tr className="border-b">
                 <td className="p-2 font-semibold">Sodio extra</td>
                 <td className="p-2">
@@ -1551,21 +1288,20 @@ const handlePrintPlan = () => {
 
         <p className="mt-3 text-[11px] text-gray-600 leading-tight">
           Este resumen es operativo y orientativo. No sustituye una valoración
-          individual. Ajusta siempre junto con tu médico y/o nutricionista
-          deportivo, especialmente si tienes antecedentes cardiovasculares,
+          individual. Ajustar siempre junto con médico y/o nutricionista
+          deportivo, sobre todo en personas con antecedentes cardiovasculares,
           renales o gastrointestinales.
         </p>
       </section>
-      
-           {/* BIBLIOGRAFÍA CIENTÍFICA */}
-      <section className="p-4 rounded-2xl shadow bg-white mt-6">
+
+      {/* BIBLIOGRAFÍA CIENTÍFICA */}
+      <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">Bibliografía científica</h2>
         <p className="text-sm text-gray-700 mb-3">
           Referencias clave en las que se basan los rangos de carbohidratos,
           hidratación, sodio y entrenamiento intestinal utilizados en esta
           herramienta.
         </p>
-
         <ul className="list-disc list-inside space-y-1 text-xs text-gray-800">
           <li>
             Jeukendrup AE. A step towards personalized sports nutrition:
@@ -1573,7 +1309,7 @@ const handlePrintPlan = () => {
             2014;44(Suppl 1):25-33.
           </li>
           <li>
-            Jeukendrup AE. Carbohydrate intake during exercise and performance.{" "}
+            Jeukendrup AE. Carbohydrate intake during exercise and performance.{' '}
             <i>Sports Medicine</i>. 2004;34(4):171-180.
           </li>
           <li>
@@ -1588,31 +1324,28 @@ const handlePrintPlan = () => {
           </li>
           <li>
             Baker LB. Sweating rate and sweat sodium concentration in athletes:
-            a review of methodology and intra/interindividual variability.{" "}
-            <i>Sports Medicine</i>. 2017;47:111-128.
+            a review of methodology and variability. <i>Sports Medicine</i>.
+            2017;47:111-128.
           </li>
           <li>
-            Barnes KA, Anderson ML, Stofan JR, Dalrymple KJ, Reimel AJ,
-            Roberts TJ. Normative data for sweating rate, sweat sodium
-            concentration and sweat sodium loss in athletes.{" "}
+            Barnes KA et al. Normative data for sweating rate, sweat sodium
+            concentration and sweat sodium loss in athletes.{' '}
             <i>Journal of Sports Sciences</i>. 2019;37(20):2356-2366.
           </li>
           <li>
-            Costa RJS, Snipe RMJ, Kitic CM, Gibson PR. Systematic review: exercise-induced gastrointestinal syndrome in endurance sports.{" "}
-            <i>Sports Medicine</i>. 2017;47(Suppl 1):99-112.
+            Costa RJS et al. Exercise-induced gastrointestinal syndrome in
+            endurance sports. <i>Sports Medicine</i>. 2017;47(Suppl 1):99-112.
           </li>
           <li>
-            Costa RJS, Miall A, Oliver SJ, et al. Gut-training: the impact of
-            two weeks of repetitive gut-challenge during exercise on
-            gastrointestinal status and performance.{" "}
+            Costa RJS et al. Gut-training: impact of two weeks of repetitive
+            gut-challenge during exercise.{' '}
             <i>Applied Physiology, Nutrition, and Metabolism</i>.
             2017;42(5):547-557.
           </li>
         </ul>
       </section>
 
-
-<footer className="text-xs text-gray-500">
+      <footer className="text-xs text-gray-500 mt-4">
         MVP educativo. Ajuste rangos/umbrales según evidencia y prueba en
         entrenamiento. Este material no reemplaza consejo clínico individual.
       </footer>
