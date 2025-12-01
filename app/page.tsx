@@ -1556,7 +1556,6 @@ const handlePrintPlan = () => {
           renales o gastrointestinales.
         </p>
       </section>
->
       
            {/* BIBLIOGRAFÍA CIENTÍFICA */}
       <section className="p-4 rounded-2xl shadow bg-white mt-6">
