@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 
 /* =========================
    Tipos
@@ -246,6 +246,47 @@ export default function AppCHO() {
   const [sweatNaMgL, setSweatNaMgL] = useState(800); // mg/L
   const [replacePct, setReplacePct] = useState(70); // % reposición (fluido y Na)
 
+  /* ----- Test práctico de tasa de sudoración (autocálculo) ----- */
+  const [sweatTestDurationHHMM, setSweatTestDurationHHMM] =
+    useState('01:00'); // duración del test
+  const sweatTestMinutes = useMemo(
+    () => toMinutes(sweatTestDurationHHMM) ?? 0,
+    [sweatTestDurationHHMM]
+  );
+  const sweatTestHours = sweatTestMinutes / 60 || 0;
+
+  const [preWeightKg, setPreWeightKg] = useState(70); // peso antes
+  const [postWeightKg, setPostWeightKg] = useState(69.5); // peso después
+
+  const [bottleEmptyG, setBottleEmptyG] = useState(200); // termo vacío
+  const [bottleFullG, setBottleFullG] = useState(700); // termo lleno antes
+  const [bottleAfterG, setBottleAfterG] = useState(300); // termo al terminar
+
+  const [urineEmptyG, setUrineEmptyG] = useState(0); // tarro orina vacío (opcional)
+  const [urineFullG, setUrineFullG] = useState(0); // tarro orina lleno (opcional)
+
+  // Pérdida de peso corporal (kg)
+  const bodyMassLossKg = Math.max(0, preWeightKg - postWeightKg);
+
+  // Líquido ingerido (L)
+  const fluidIntakeL = Math.max(0, (bottleFullG - bottleAfterG) / 1000);
+
+  // Orina producida (L)
+  const urineVolumeL =
+    urineFullG > 0 && urineEmptyG > 0
+      ? Math.max(0, (urineFullG - urineEmptyG) / 1000)
+      : 0;
+
+  // Sudor perdido (L)
+  const sweatLossL = Math.max(
+    0,
+    bodyMassLossKg + fluidIntakeL - urineVolumeL
+  );
+
+  // Tasa de sudoración (L/h)
+  const sweatRateTestLh =
+    sweatTestHours > 0 ? sweatLossL / sweatTestHours : 0;
+
   const drink = drinks.find((d) => d.nombre === drinkName) || drinks[0];
   const electrolyte =
     electrolytes.find((e) => e.nombre === electrolyteName) || electrolytes[0];
@@ -269,15 +310,66 @@ export default function AppCHO() {
       ? sodiumGapMgH / electrolyte.sodioPorUnidad
       : 0;
 
+  /* ---------- RESUMEN GLOBAL DE HIDRATACIÓN ---------- */
+
+  const totalDurationHours = hours || 0;
+
+  // Pérdida total de líquido en toda la prueba
+  const totalFluidLossL = sweatRateLh * totalDurationHours;
+
+  // Ingesta total planificada (según la bebida seleccionada)
+  const totalFluidIntakeL = (fluidGoalMlH / 1000) * totalDurationHours;
+
+  // Déficit neto de líquido
+  const fluidDeficitL = Math.max(0, totalFluidLossL - totalFluidIntakeL);
+
+  // % estimado de pérdida de peso
+  const bodyMassLossPct =
+    preWeightKg > 0 ? (fluidDeficitL / preWeightKg) * 100 : 0;
+
+  // Sodio total perdido
+  const totalNaLossMg = sweatRateLh * sweatNaMgL * totalDurationHours;
+
+  // Sodio total ingerido (bebida + cápsulas)
+  const totalNaFromDrinkMg = drinkNaMgH * totalDurationHours;
+
+  const totalNaFromCapsulesMg =
+    electrolytePerH * electrolyte.sodioPorUnidad * totalDurationHours;
+
+  const totalNaIntakeMg = totalNaFromDrinkMg + totalNaFromCapsulesMg;
+
+  // Déficit total de sodio
+  const totalNaGapMg = Math.max(0, totalNaLossMg - totalNaIntakeMg);
+
   /* ---------- Objetivo CHO neto (para gel/barrita) ---------- */
   const choTargetNet = Math.max(0, choTarget - drinkCHOgh); // g/h restantes
 
   const choProduct =
     choProducts.find((p) => p.nombre === choProductName) || choProducts[0];
 
-  // Intervalo por tiempo en función de CHO por unidad y objetivo neto
-  const intervalMin =
-    choTargetNet > 0 ? round5(60 * (choProduct.cho / choTargetNet)) : 0;
+
+// Cálculos para resumen operativo
+const gelsPerHour =
+  choProduct.cho > 0 ? choTargetNet / choProduct.cho : 0;
+const gelsTotal =
+  choProduct.cho > 0
+    ? Math.ceil((hours * choTargetNet) / choProduct.cho)
+    : 0;
+
+const drinkTotalServ = drinkServH * hours;
+const capsulesTotal = electrolytePerH * hours;
+
+// Propuesta operativa: sorbos cada 15 min y, si aplica, cápsulas cada X min
+const drinkIntervalMin = 15;
+const drinkPerIntervalMl = (fluidGoalMlH * drinkIntervalMin) / 60;
+
+const sodiumIntervalMin =
+  electrolytePerH > 0 ? round5(60 / electrolytePerH) : 0;
+
+// Intervalo por tiempo en función de CHO por unidad y objetivo neto
+const intervalMin =
+  choTargetNet > 0 ? round5(60 * (choProduct.cho / choTargetNet)) : 0;
+
 
   const intervalKm = useMemo(() => {
     if (intervalMin === 0) return 0;
@@ -398,6 +490,10 @@ export default function AppCHO() {
   };
 
   /* ---------- UI ---------- */
+
+const handlePrintPlan = () => {
+  window.print();
+};
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
       <h1 className="text-2xl font-bold">App CHO & Hidratación – MVP</h1>
@@ -576,6 +672,184 @@ export default function AppCHO() {
         </div>
       </section>
 
+      {/* TEST TASA DE SUDORACIÓN */}
+      <section className="p-4 rounded-2xl shadow bg-white">
+        <h2 className="text-lg font-semibold mb-3">
+          Test práctico de tasa de sudoración
+        </h2>
+        <p className="text-sm text-gray-600 mb-3">
+          Esta prueba casera te da una idea de cuánta agua pierdes por hora en
+          condiciones similares a tu entrenamiento. Ideal repetirla en días de
+          clima parecido a tus competencias. Usa siempre la misma báscula.
+        </p>
+        <ol className="text-xs text-gray-600 mb-4 list-decimal list-inside space-y-1">
+          <li>Pésate antes de entrenar, con la menor ropa posible.</li>
+          <li>
+            Pesa el termo vacío y luego el termo lleno antes de salir (anota
+            ambos pesos).
+          </li>
+          <li>
+            Entrena el tiempo indicado usando solo ese termo para hidratarte.
+          </li>
+          <li>
+            Al terminar, vuelve a pesarte y pesa de nuevo el termo con el
+            líquido que sobró.
+          </li>
+          <li>
+            Opcional: si quieres ser más preciso, recoge la orina en un tarro,
+            pésalo vacío y luego lleno.
+          </li>
+        </ol>
+
+        <div className="grid md:grid-cols-4 gap-3 items-end text-sm">
+          {/* Duración y pesos corporales */}
+          <label>
+            Duración del test (hh:mm)
+            <input
+              className="w-full border p-2 rounded"
+              value={sweatTestDurationHHMM}
+              onChange={(e) => setSweatTestDurationHHMM(e.target.value)}
+            />
+          </label>
+          <label>
+            Peso antes (kg)
+            <input
+              type="number"
+              step="0.1"
+              className="w-full border p-2 rounded"
+              value={preWeightKg}
+              onChange={(e) =>
+                setPreWeightKg(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <label>
+            Peso después (kg)
+            <input
+              type="number"
+              step="0.1"
+              className="w-full border p-2 rounded"
+              value={postWeightKg}
+              onChange={(e) =>
+                setPostWeightKg(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <div className="bg-gray-50 p-2 rounded text-xs">
+            <div>
+              Pérdida de peso: <b>{bodyMassLossKg.toFixed(2)}</b> kg{' '}
+              {preWeightKg > 0 && postWeightKg > 0 ? (
+                <>
+                  (
+                  {(
+                    ((postWeightKg - preWeightKg) / preWeightKg) *
+                    100
+                  ).toFixed(1)}
+                  %)
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Termo / hidratante */}
+          <label>
+            Termo vacío (g)
+            <input
+              type="number"
+              className="w-full border p-2 rounded"
+              value={bottleEmptyG}
+              onChange={(e) =>
+                setBottleEmptyG(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <label>
+            Termo lleno antes (g)
+            <input
+              type="number"
+              className="w-full border p-2 rounded"
+              value={bottleFullG}
+              onChange={(e) =>
+                setBottleFullG(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <label>
+            Termo al terminar (g)
+            <input
+              type="number"
+              className="w-full border p-2 rounded"
+              value={bottleAfterG}
+              onChange={(e) =>
+                setBottleAfterG(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <div className="bg-gray-50 p-2 rounded text-xs">
+            <div>
+              Líquido ingerido: <b>{(fluidIntakeL * 1000).toFixed(0)}</b> ml
+            </div>
+          </div>
+
+          {/* Orina opcional */}
+          <label>
+            Tarro orina vacío (g) (opcional)
+            <input
+              type="number"
+              className="w-full border p-2 rounded"
+              value={urineEmptyG}
+              onChange={(e) =>
+                setUrineEmptyG(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <label>
+            Tarro orina lleno (g) (opcional)
+            <input
+              type="number"
+              className="w-full border p-2 rounded"
+              value={urineFullG}
+              onChange={(e) =>
+                setUrineFullG(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <div className="bg-gray-50 p-2 rounded text-xs">
+            <div>
+              Orina estimada: <b>{(urineVolumeL * 1000).toFixed(0)}</b> ml
+            </div>
+          </div>
+
+          {/* Resultado final */}
+          <div className="bg-gray-100 p-3 rounded col-span-4 md:col-span-2 text-sm">
+            <div>
+              Pérdida total de sudor:{' '}
+              <b>{sweatLossL > 0 ? sweatLossL.toFixed(2) : '0.00'}</b> L
+            </div>
+            <div>
+              Tasa de sudoración:{' '}
+              <b>
+                {sweatRateTestLh > 0 ? sweatRateTestLh.toFixed(2) : '0.00'}
+              </b>{' '}
+              L/h
+            </div>
+            <p className="text-xs text-gray-600 mt-1">
+              Valores típicos en deportistas bien entrenados suelen estar entre
+              ~0,5 y 1,5 L/h, pero pueden ser mayores en calor intenso.
+            </p>
+            <button
+              type="button"
+              className="mt-2 px-3 py-1 border rounded text-xs"
+              onClick={() =>
+                sweatRateTestLh > 0 && setSweatRateLh(sweatRateTestLh)
+              }
+            >
+              Usar este valor como tasa de sudoración en la app
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* HIDRATACIÓN por sudor */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-3">
@@ -667,6 +941,53 @@ export default function AppCHO() {
               <b>{electrolytePerH.toFixed(2)}</b>
             </div>
           </div>
+        </div>
+
+        {/* RESUMEN GLOBAL */}
+        <div className="mt-3 bg-gray-50 p-3 rounded text-xs space-y-1">
+          <div className="font-semibold text-sm">
+            Resumen para toda la prueba
+          </div>
+
+          <div>
+            Pérdida total de líquido estimada:{' '}
+            <b>{totalFluidLossL.toFixed(2)}</b> L
+          </div>
+
+          <div>
+            Ingesta total planificada:{' '}
+            <b>{totalFluidIntakeL.toFixed(2)}</b> L
+          </div>
+
+          <div>
+            Déficit neto de líquido:{' '}
+            <b>{fluidDeficitL.toFixed(2)}</b> L
+            {bodyMassLossPct > 0 && (
+              <>
+                {' '}
+                (~<b>{bodyMassLossPct.toFixed(1)}%</b> del peso corporal)
+              </>
+            )}
+          </div>
+
+          <div className="mt-1">
+            Sodio total perdido: <b>{totalNaLossMg.toFixed(0)}</b> mg
+          </div>
+
+          <div>
+            Sodio total ingerido: <b>{totalNaIntakeMg.toFixed(0)}</b> mg
+          </div>
+
+          <div>
+            Déficit total de sodio:{' '}
+            <b>{totalNaGapMg.toFixed(0)}</b> mg
+          </div>
+
+          <p className="mt-2 text-[11px] text-gray-600 leading-tight">
+            Como referencia general, mantener la pérdida de peso por debajo
+            del 2–3% suele ser razonable en muchas guías, pero debe ajustarse
+            de forma individual.
+          </p>
         </div>
       </section>
 
@@ -786,8 +1107,7 @@ export default function AppCHO() {
                       0,
                       Math.min(3, parseInt(e.target.value || '0'))
                     ),
-                  }))
-                }
+                  }))}
               />
             </label>
           ))}
@@ -1071,7 +1391,224 @@ export default function AppCHO() {
         </div>
       </section>
 
-      <footer className="text-xs text-gray-500">
+
+{/* RESUMEN OPERATIVO */}
+
+      {/* RESUMEN OPERATIVO DEL PLAN */}
+      <section className="p-4 rounded-2xl shadow bg-white">
+        <h2 className="text-lg font-semibold mb-2">
+          Resumen operativo de hidratación y carbohidratos
+        </h2>
+        <p className="text-sm text-gray-700 mb-3">
+          Objetivo práctico del plan para esta sesión o competencia. Los
+          valores son aproximados y deben probarse siempre primero en
+          entrenamiento.
+        </p>
+
+        {/* Resumen numérico de objetivos */}
+        <div className="grid md:grid-cols-3 gap-3 text-sm mb-4">
+          <div className="bg-gray-50 rounded-xl p-3">
+            <h3 className="font-semibold mb-1 text-gray-800">Carbohidratos</h3>
+            <p>
+              Rango sugerido:{' '}
+              <b>{range?.label ?? '—'} g/h</b>. Plan actual:{' '}
+              <b>{choTarget.toFixed(0)} g/h</b>.
+            </p>
+            {choTargetNet > 0 && (
+              <p>
+                De ese total, la bebida aporta{' '}
+                <b>{drinkCHOgh.toFixed(0)} g/h</b> y el resto se planifica con
+                geles/barritas (~<b>{gelsPerHour.toFixed(1)} unid/h</b> de{' '}
+                <b>{choProduct.nombre}</b>).
+              </p>
+            )}
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-3">
+            <h3 className="font-semibold mb-1 text-gray-800">Hidratación</h3>
+            <p>
+              Tasa de sudoración estimada:{' '}
+              <b>{sweatRateLh.toFixed(2)} L/h</b>.
+            </p>
+            <p>
+              Objetivo de ingesta:{' '}
+              <b>{fluidGoalMlH}</b> ml/h con{' '}
+              <b>{drink.nombre}</b> (≈{' '}
+              <b>{Math.round(drinkCHOgh)}</b> g CHO/h y{' '}
+              <b>{Math.round(drinkNaMgH)}</b> mg Na/h).
+            </p>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-3">
+            <h3 className="font-semibold mb-1 text-gray-800">Sodio</h3>
+            <p>
+              Pérdida estimada:{' '}
+              <b>{sodiumGoalMgH}</b> mg/h.
+            </p>
+            <p>
+              Aporte con la bebida:{' '}
+              <b>{Math.round(drinkNaMgH)}</b> mg/h.
+              {sodiumGapMgH > 0 ? (
+                <>
+                  {' '}Déficit: ~<b>{sodiumGapMgH.toFixed(0)} mg/h</b>. Se
+                  compensa con ≈{' '}
+                  <b>{electrolytePerH.toFixed(1)} cáps/h</b> de{' '}
+                  <b>{electrolyte.nombre}</b>.
+                </>
+              ) : (
+                <> Con esta bebida el déficit es pequeño; puede no requerir sodio extra.</>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Cuadro operativo: qué hacer y cuándo */}
+        <h3 className="text-sm font-semibold mb-2">
+          Cuadro operativo (qué hacer durante la sesión)
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 text-left">Componente</th>
+                <th className="p-2 text-left">Frecuencia orientativa</th>
+                <th className="p-2 text-left">Acción concreta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b">
+                <td className="p-2 font-semibold">Carbohidratos</td>
+                <td className="p-2">
+                  {choTargetNet > 0 && intervalMin
+                    ? `Cada ${intervalMin} min`
+                    : 'Según tolerancia / no se requiere CHO extra'}
+                </td>
+                <td className="p-2">
+                  {choTargetNet > 0 ? (
+                    <>
+                      Tomar <b>1 unidad</b> de{' '}
+                      <b>{choProduct.nombre}</b> cada{' '}
+                      <b>{intervalMin}</b> min (≈{' '}
+                      <b>{gelsPerHour.toFixed(1)} unid/h</b>).
+                    </>
+                  ) : (
+                    <>La bebida cubre prácticamente todo el objetivo de CHO.</>
+                  )}
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-2 font-semibold">Hidratación</td>
+                <td className="p-2">
+                  {fluidGoalMlH > 0
+                    ? `Pequeños sorbos cada ${drinkIntervalMin} min`
+                    : 'Hidratación libre según sed'}
+                </td>
+                <td className="p-2">
+                  {fluidGoalMlH > 0 ? (
+                    <>
+                      Objetivo aproximado:{' '}
+                      <b>{fluidGoalMlH} ml/h</b>. Eso equivale a ~
+                      <b>{Math.round(drinkPerIntervalMl)} ml</b> de{' '}
+                      <b>{drink.nombre}</b> cada{' '}
+                      <b>{drinkIntervalMin}</b> min.
+                    </>
+                  ) : (
+                    <>No hay objetivo específico calculado de hidratación.</>
+                  )}
+                </td>
+              </tr>
+
+              <tr className="border-b">
+                <td className="p-2 font-semibold">Sodio extra</td>
+                <td className="p-2">
+                  {sodiumIntervalMin
+                    ? `Cada ${sodiumIntervalMin} min`
+                    : 'No se planifica sodio extra'}
+                </td>
+                <td className="p-2">
+                  {sodiumIntervalMin ? (
+                    <>
+                      Añadir <b>1 cápsula</b> de{' '}
+                      <b>{electrolyte.nombre}</b> aproximadamente cada{' '}
+                      <b>{sodiumIntervalMin}</b> min, hasta un total de{' '}
+                      <b>{capsulesTotal.toFixed(0)} cápsulas</b> en toda la
+                      prueba. Ajustar si hace frío, si la intensidad es baja o
+                      si aparecen signos de exceso de sodio.
+                    </>
+                  ) : (
+                    <>
+                      Con la bebida actual el objetivo de sodio se cubre casi
+                      por completo. Solo añadir cápsulas si un profesional lo
+                      indica o en condiciones de calor/extensión muy altas.
+                    </>
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-3 text-[11px] text-gray-600 leading-tight">
+          Este resumen es operativo y orientativo. No sustituye una valoración
+          individual. Ajusta siempre junto con tu médico y/o nutricionista
+          deportivo, especialmente si tienes antecedentes cardiovasculares,
+          renales o gastrointestinales.
+        </p>
+      </section>
+>
+      
+      {/* BIBLIOGRAFÍA CIENTÍFICA */}
+      <section className="p-4 rounded-2xl shadow bg-white mt-6">
+        <h2 className="text-lg font-semibold mb-2">Bibliografía científica</h2>
+        <p className="text-sm text-gray-700 mb-3">
+          Referencias clave en las que se basan los rangos de carbohidratos,
+          hidratación, sodio y entrenamiento intestinal utilizados en esta
+          herramienta.
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-xs text-gray-800">
+          <li>
+            Jeukendrup AE. A step towards personalized sports nutrition:
+            carbohydrate intake during exercise. <i>Sports Medicine</i>.
+            2014;44(Suppl 1):25-33.
+          </li>
+          <li>
+            Jeukendrup AE. Carbohydrate intake during exercise and performance.
+            <i> Sports Medicine</i>. 2004;34(4):171-180.
+          </li>
+          <li>
+            Wallis GA, et al. Dietary carbohydrate and the endurance athlete:
+            contemporary perspectives. <i>Gatorade Sports Science Institute</i>.
+          </li>
+          <li>
+            American College of Sports Medicine. Position Stand: Exercise and
+            Fluid Replacement. <i>Med Sci Sports Exerc</i>. 2007;39:377-390.
+          </li>
+          <li>
+            Baker LB. Sweating rate and sweat sodium concentration in athletes:
+            a review of methodology and intra/interindividual variability.{" "}
+            <i>Sports Medicine</i>. 2017;47:111-128.
+          </li>
+          <li>
+            Barnes KA, et al. Normative data for sweating rate, sweat sodium
+            concentration and sweat sodium loss in athletes: an update and
+            analysis by sport. <i>J Sports Sci</i>. 2019;37(20):2356-2366.
+          </li>
+          <li>
+            Costa RJS, et al. Gut-training: the impact of two weeks repetitive
+            gut-challenge during exercise on gastrointestinal status, glucose
+            availability, fuel kinetics and running performance.{" "}
+            <i>Appl Physiol Nutr Metab</i>. 2017;42(5):547-557.
+          </li>
+          <li>
+            Miall A, et al. Two weeks of repetitive gut-challenge reduce
+            exercise-associated gastrointestinal symptoms and malabsorption.{" "}
+            <i>Scand J Med Sci Sports</i>. 2018;28(6):630-640.
+          </li>
+        </ul>
+      </section>
+
+<footer className="text-xs text-gray-500">
         MVP educativo. Ajuste rangos/umbrales según evidencia y prueba en
         entrenamiento. Este material no reemplaza consejo clínico individual.
       </footer>
