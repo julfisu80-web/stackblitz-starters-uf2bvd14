@@ -1558,7 +1558,7 @@ const handlePrintPlan = () => {
       </section>
 >
       
-      {/* BIBLIOGRAFÍA CIENTÍFICA */}
+           {/* BIBLIOGRAFÍA CIENTÍFICA */}
       <section className="p-4 rounded-2xl shadow bg-white mt-6">
         <h2 className="text-lg font-semibold mb-2">Bibliografía científica</h2>
         <p className="text-sm text-gray-700 mb-3">
@@ -1566,6 +1566,7 @@ const handlePrintPlan = () => {
           hidratación, sodio y entrenamiento intestinal utilizados en esta
           herramienta.
         </p>
+
         <ul className="list-disc list-inside space-y-1 text-xs text-gray-800">
           <li>
             Jeukendrup AE. A step towards personalized sports nutrition:
@@ -1573,16 +1574,18 @@ const handlePrintPlan = () => {
             2014;44(Suppl 1):25-33.
           </li>
           <li>
-            Jeukendrup AE. Carbohydrate intake during exercise and performance.
-            <i> Sports Medicine</i>. 2004;34(4):171-180.
+            Jeukendrup AE. Carbohydrate intake during exercise and performance.{" "}
+            <i>Sports Medicine</i>. 2004;34(4):171-180.
           </li>
           <li>
-            Wallis GA, et al. Dietary carbohydrate and the endurance athlete:
-            contemporary perspectives. <i>Gatorade Sports Science Institute</i>.
+            Stellingwerff T, Cox GR. Systematic review: carbohydrate
+            supplementation in endurance athletes. <i>Sports Medicine</i>.
+            2014;44:S17-S27.
           </li>
           <li>
             American College of Sports Medicine. Position Stand: Exercise and
-            Fluid Replacement. <i>Med Sci Sports Exerc</i>. 2007;39:377-390.
+            Fluid Replacement. <i>Medicine and Science in Sports and Exercise</i>.
+            2007;39(2):377-390.
           </li>
           <li>
             Baker LB. Sweating rate and sweat sodium concentration in athletes:
@@ -1590,23 +1593,25 @@ const handlePrintPlan = () => {
             <i>Sports Medicine</i>. 2017;47:111-128.
           </li>
           <li>
-            Barnes KA, et al. Normative data for sweating rate, sweat sodium
-            concentration and sweat sodium loss in athletes: an update and
-            analysis by sport. <i>J Sports Sci</i>. 2019;37(20):2356-2366.
+            Barnes KA, Anderson ML, Stofan JR, Dalrymple KJ, Reimel AJ,
+            Roberts TJ. Normative data for sweating rate, sweat sodium
+            concentration and sweat sodium loss in athletes.{" "}
+            <i>Journal of Sports Sciences</i>. 2019;37(20):2356-2366.
           </li>
           <li>
-            Costa RJS, et al. Gut-training: the impact of two weeks repetitive
-            gut-challenge during exercise on gastrointestinal status, glucose
-            availability, fuel kinetics and running performance.{" "}
-            <i>Appl Physiol Nutr Metab</i>. 2017;42(5):547-557.
+            Costa RJS, Snipe RMJ, Kitic CM, Gibson PR. Systematic review: exercise-induced gastrointestinal syndrome in endurance sports.{" "}
+            <i>Sports Medicine</i>. 2017;47(Suppl 1):99-112.
           </li>
           <li>
-            Miall A, et al. Two weeks of repetitive gut-challenge reduce
-            exercise-associated gastrointestinal symptoms and malabsorption.{" "}
-            <i>Scand J Med Sci Sports</i>. 2018;28(6):630-640.
+            Costa RJS, Miall A, Oliver SJ, et al. Gut-training: the impact of
+            two weeks of repetitive gut-challenge during exercise on
+            gastrointestinal status and performance.{" "}
+            <i>Applied Physiology, Nutrition, and Metabolism</i>.
+            2017;42(5):547-557.
           </li>
         </ul>
       </section>
+
 
 <footer className="text-xs text-gray-500">
         MVP educativo. Ajuste rangos/umbrales según evidencia y prueba en
