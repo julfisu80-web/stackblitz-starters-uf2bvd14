@@ -16,6 +16,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Enlace al manifest */}
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* Opcional pero recomendado para PWA */}
+        <meta name="theme-color" content="#0055ff" />
+      </head>
+
       <body className={inter.className}>{children}</body>
     </html>
   );
