@@ -266,7 +266,7 @@ export default function Page() {
     return rows;
   }, [intervalMin, minutes, modality, paceMinPerKm, speedKmh]);
 
-   /* Tasa de sudoración: test simple */
+  /* Tasa de sudoración: test simple */
   const [preWeight, setPreWeight] = useState(70);
   const [postWeight, setPostWeight] = useState(69.2);
 
@@ -302,15 +302,13 @@ export default function Page() {
     return lossMl / (durMin / 60) / 1000;
   }, [preWeight, postWeight, drinkMl, urineMl, testDurationHHMM]);
 
-
-  /* Resumen operativo */
+  /* Resumen operativo / modo atleta */
   const gelsPerHour =
     choProduct.cho > 0 && choTargetNet > 0
       ? choTargetNet / choProduct.cho
       : 0;
 
-  const drinkIntervalMin =
-    fluidGoalMlH > 0 ? 15 : 0; // sorbos cada 15 min
+  const drinkIntervalMin = fluidGoalMlH > 0 ? 15 : 0; // sorbos cada 15 min
   const drinkPerIntervalMl =
     drinkIntervalMin && fluidGoalMlH > 0
       ? (fluidGoalMlH / 60) * drinkIntervalMin
@@ -319,6 +317,23 @@ export default function Page() {
   const sodiumIntervalMin =
     electrolytePerH > 0 ? Math.round(60 / electrolytePerH) : 0;
   const capsulesTotal = electrolytePerH * hours;
+
+  const totalChoObjetivo = hours * choTarget; // g totales objetivo
+  const totalChoBebida = hours * drinkCHOgh; // g totales aportados por bebida
+  const totalChoGel = hours * choTargetNet; // g totales a cubrir con gel/barrita
+
+  const totalFluido = fluidGoalMlH * hours; // ml totales de fluido
+  const totalNaObjetivo = sodiumGoalMgH * hours; // mg totales de sodio objetivo
+  const totalNaBebida = drinkNaMgH * hours; // mg totales de sodio desde bebida
+  const totalNaCaps = Math.max(0, totalNaObjetivo - totalNaBebida); // mg totales extra
+
+  const capsTotales =
+    electrolytePerH > 0 && electrolyte.sodioPorUnidad > 0
+      ? totalNaCaps / electrolyte.sodioPorUnidad
+      : 0;
+
+  const intervaloCapsMin =
+    electrolytePerH > 0 ? Math.round(60 / electrolytePerH) : 0;
 
   /* Tolerancia simple (solo sumar síntomas) */
   const [sx, setSx] = useState({
@@ -574,8 +589,7 @@ export default function Page() {
               Nivel: <b>{level}</b>
             </div>
             <div>
-              Rango sugerido CHO:{' '}
-              <b>{range.label}</b> g/h
+              Rango sugerido CHO: <b>{range.label}</b> g/h
             </div>
             <div>
               CHO objetivo (ajustado por entrenamiento intestinal):{' '}
@@ -584,8 +598,8 @@ export default function Page() {
           </div>
         </div>
       </section>
-       
-               {/* TEST DE SUDORACIÓN SIMPLE */}
+
+      {/* TEST DE SUDORACIÓN SIMPLE */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Test rápido de tasa de sudoración
@@ -593,8 +607,9 @@ export default function Page() {
 
         {/* Descripción general */}
         <p className="text-sm text-gray-700 mb-2">
-          Test práctico para estimar cuánta <b>agua</b> pierdes por hora en condiciones similares a tu competencia. 
-          Idealmente usar una sesión de ≥45–60 min a intensidad habitual.
+          Test práctico para estimar cuánta <b>agua</b> pierdes por hora en condiciones
+          similares a tu competencia. Idealmente usar una sesión de ≥45–60 min a
+          intensidad habitual.
         </p>
 
         {/* Bloque de materiales y pasos */}
@@ -606,7 +621,10 @@ export default function Page() {
               <li>Gramera o báscula de cocina.</li>
               <li>Termo / caramañola que usarás durante el entrenamiento.</li>
               <li>Frasco para orina (opcional).</li>
-              <li>Registro de <b>temperatura</b> y <b>humedad</b> del día (app del clima o similar).</li>
+              <li>
+                Registro de <b>temperatura</b> y <b>humedad</b> del día
+                (app del clima o similar).
+              </li>
             </ul>
           </div>
 
@@ -615,13 +633,17 @@ export default function Page() {
             <ol className="list-decimal list-inside text-xs text-gray-700 space-y-1">
               <li>Pésate <b>antes</b> del entrenamiento (tras ir al baño).</li>
               <li>Pesa el <b>termo lleno</b> antes de salir.</li>
-              <li>Durante la sesión, bebe solo de ese termo. Si orinas, hazlo en el <b>frasco</b>.</li>
+              <li>Durante la sesión, bebe solo de ese termo. Si orinas, usa el frasco.</li>
               <li>Al terminar, pésate de nuevo.</li>
               <li>Pesa el <b>termo al final</b> (con el líquido que queda).</li>
-              <li>Si mides orina, pesa el <b>frasco vacío</b> y el <b>frasco con orina</b>.</li>
+              <li>
+                Si mides orina, pesa el <b>frasco vacío</b> y el{' '}
+                <b>frasco con orina</b>.
+              </li>
             </ol>
             <p className="text-[11px] text-gray-600 mt-1">
-              La app calcula automáticamente los ml bebidos y la orina usando las diferencias de peso (1 g ≈ 1 ml).
+              La app calcula automáticamente los ml bebidos y la orina usando las
+              diferencias de peso (1 g ≈ 1 ml).
             </p>
           </div>
         </div>
@@ -705,16 +727,14 @@ export default function Page() {
 
           <div className="bg-gray-50 p-3 rounded text-xs md:col-span-2 space-y-1">
             <div>
-              Líquido ingerido estimado:{' '}
-              <b>{drinkMl.toFixed(0)} ml</b>
+              Líquido ingerido estimado: <b>{drinkMl.toFixed(0)} ml</b>
             </div>
             <div>
-              Orina estimada:{' '}
-              <b>{urineMl.toFixed(0)} ml</b>
+              Orina estimada: <b>{urineMl.toFixed(0)} ml</b>
             </div>
             <p className="text-[11px] text-gray-600">
-              Cálculo automático a partir de la diferencia de peso: termo lleno − termo al final,
-              y frasco con orina − frasco vacío (1 g ≈ 1 ml).
+              Cálculo a partir de la diferencia de peso: termo lleno − termo al
+              final, y frasco con orina − frasco vacío (1 g ≈ 1 ml).
             </p>
           </div>
         </div>
@@ -724,17 +744,15 @@ export default function Page() {
           Tasa de sudoración estimada:{' '}
           <b>{sweatRateTestLh > 0 ? sweatRateTestLh.toFixed(2) : '0.00'} L/h</b>
           <p className="text-xs text-gray-600 mt-1">
-            Valores típicos en deportistas bien entrenados suelen estar entre ~0,5 y 1,5 L/h, 
-            pero pueden ser mayores en calor intenso. Usa este valor como referencia para la 
-            casilla de &quot;Tasa de sudoración (L/h)&quot; en la sección de hidratación y 
-            registra siempre temperatura y humedad para interpretar mejor el contexto.
+            Valores típicos en deportistas bien entrenados suelen estar entre ~0,5
+            y 1,5 L/h, pero pueden ser mayores en calor intenso. Usa este valor
+            como referencia para la casilla de &quot;Tasa de sudoración (L/h)&quot;
+            en la sección de hidratación y registra siempre temperatura y humedad.
           </p>
         </div>
       </section>
 
-
-
-            {/* HIDRATACIÓN */}
+      {/* HIDRATACIÓN */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Hidratación (tasa de sudoración y sodio)
@@ -829,7 +847,6 @@ export default function Page() {
         </div>
       </section>
 
-
       {/* PLAN DE COMPETENCIA */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
@@ -849,21 +866,18 @@ export default function Page() {
             </select>
           </label>
           <div className="bg-gray-50 p-2 rounded">
-            CHO total objetivo:{' '}
-            <b>{(hours * choTarget).toFixed(0)} g</b>
+            CHO total objetivo: <b>{(hours * choTarget).toFixed(0)} g</b>
           </div>
           <div className="bg-gray-50 p-2 rounded">
-            CHO bebida:{' '}
-            <b>{(hours * drinkCHOgh).toFixed(0)} g</b>
+            CHO bebida: <b>{(hours * drinkCHOgh).toFixed(0)} g</b>
           </div>
           <div className="bg-gray-50 p-2 rounded col-span-2">
             CHO a cubrir con gel/barrita:{' '}
             <b>{(hours * choTargetNet).toFixed(0)} g</b>
           </div>
           <div className="bg-gray-50 p-2 rounded">
-            Intervalo aprox:{' '}
-            <b>{intervalMin || '—'} min</b> (
-            {intervalKm ? `${intervalKm} km` : 'según ritmo'})
+            Intervalo aprox: <b>{intervalMin || '—'} min</b>{' '}
+            {intervalKm ? `(${intervalKm} km)` : '(según ritmo)'}
           </div>
           <div className="bg-gray-50 p-2 rounded">
             Unidades totales (aprox):{' '}
@@ -948,12 +962,10 @@ export default function Page() {
         <div className="mt-3 text-xs bg-gray-50 p-3 rounded space-y-1">
           <div>
             Sup: <b>{sxSup}</b> | Inf: <b>{sxInf}</b> | Neuro: <b>{sxNeuro}</b>{' '}
-            | Fructosa del producto:{' '}
-            <b>{(frFrac * 100).toFixed(0)}%</b>
+            | Fructosa del producto: <b>{(frFrac * 100).toFixed(0)}%</b>
           </div>
           <div>
-            Sospechas:{' '}
-            {sospechas.length ? sospechas.join(', ') : '—'}
+            Sospechas: {sospechas.length ? sospechas.join(', ') : '—'}
           </div>
           <div>
             Sugerencias rápidas:{' '}
@@ -963,7 +975,8 @@ export default function Page() {
               'Bajar concentración de CHO (6–8 %) o cambiar a productos menos concentrados. '}
             {sospechas.includes('Sensibilidad a cafeína') &&
               'Reducir o eliminar la cafeína antes y durante la prueba.'}
-            {!sospechas.length && 'Sin señales claras; seguir monitorizando en entrenamientos.'}
+            {!sospechas.length &&
+              'Sin señales claras; seguir monitorizando en entrenamientos.'}
           </div>
         </div>
       </section>
@@ -1253,157 +1266,139 @@ export default function Page() {
         </div>
       </section>
 
-      {/* RESUMEN OPERATIVO */}
+      {/* MODO ATLETA – RESUMEN OPERATIVO */}
       <section className="p-4 rounded-2xl shadow bg-white">
-        <h2 className="text-lg font-semibold mb-2">
-          Resumen operativo de hidratación y carbohidratos
-        </h2>
-        <p className="text-sm text-gray-700 mb-3">
-          Objetivo práctico del plan para esta sesión o competencia. Los valores
-          son aproximados y deben probarse primero en entrenamiento.
-        </p>
-        <div className="grid md:grid-cols-3 gap-3 text-sm mb-4">
-          <div className="bg-gray-50 rounded-xl p-3">
-            <h3 className="font-semibold mb-1 text-gray-800">Carbohidratos</h3>
-            <p>
-              Rango sugerido:{' '}
-              <b>{range.label} g/h</b>. Plan actual:{' '}
-              <b>{choTarget.toFixed(0)} g/h</b>.
-            </p>
-            {choTargetNet > 0 && (
-              <p>
-                De ese total, la bebida aporta{' '}
-                <b>{drinkCHOgh.toFixed(0)} g/h</b> y el resto se cubre con
-                geles/barritas (~<b>{gelsPerHour.toFixed(1)} unid/h</b> de{' '}
-                <b>{choProduct.nombre}</b>).
-              </p>
-            )}
+        <h2 className="text-lg font-semibold mb-2">Modo atleta – resumen operativo</h2>
+
+        {/* Tarjetas con los 3 objetivos clave */}
+        <div className="grid md:grid-cols-3 gap-3 mb-4 text-sm">
+          <div className="bg-blue-50 rounded-xl p-3">
+            <div className="text-xs text-gray-600">Carbohidratos</div>
+            <div className="text-2xl font-bold">
+              {choTarget ? choTarget.toFixed(0) : '—'} g/h
+            </div>
+            <div className="text-[11px] text-gray-600 mt-1">
+              Objetivo aproximado por hora (suma de bebida + gel/barrita).
+            </div>
           </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <h3 className="font-semibold mb-1 text-gray-800">Hidratación</h3>
-            <p>
-              Tasa de sudoración estimada:{' '}
-              <b>{sweatRateLh.toFixed(2)} L/h</b>.
-            </p>
-            <p>
-              Objetivo de ingesta: <b>{fluidGoalMlH} ml/h</b> con{' '}
-              <b>{drink.nombre}</b> (≈{' '}
-              <b>{Math.round(drinkCHOgh)}</b> g CHO/h y{' '}
-              <b>{Math.round(drinkNaMgH)}</b> mg Na/h).
-            </p>
+
+          <div className="bg-teal-50 rounded-xl p-3">
+            <div className="text-xs text-gray-600">Hidratación</div>
+            <div className="text-2xl font-bold">
+              {fluidGoalMlH ? fluidGoalMlH.toFixed(0) : '—'} ml/h
+            </div>
+            <div className="text-[11px] text-gray-600 mt-1">
+              Beber en pequeños sorbos regulares, no de una sola vez.
+            </div>
           </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <h3 className="font-semibold mb-1 text-gray-800">Sodio</h3>
-            <p>
-              Pérdida estimada:{' '}
-              <b>{sodiumGoalMgH}</b> mg/h.
-            </p>
-            <p>
-              Aporte con la bebida:{' '}
-              <b>{Math.round(drinkNaMgH)}</b> mg/h.
-              {sodiumGapMgH > 0 ? (
-                <>
-                  {' '}Déficit: ~<b>{sodiumGapMgH.toFixed(0)} mg/h</b>. Se
-                  compensa con ≈{' '}
-                  <b>{electrolytePerH.toFixed(1)} cáps/h</b> de{' '}
-                  <b>{electrolyte.nombre}</b>.
-                </>
-              ) : (
-                <> Con esta bebida el déficit es pequeño; puede no requerir sodio extra.</>
-              )}
-            </p>
+
+          <div className="bg-yellow-50 rounded-xl p-3">
+            <div className="text-xs text-gray-600">Sodio</div>
+            <div className="text-2xl font-bold">
+              {sodiumGoalMgH ? sodiumGoalMgH.toFixed(0) : '—'} mg/h
+            </div>
+            <div className="text-[11px] text-gray-600 mt-1">
+              Suma de lo que aporta la bebida + cápsulas/electrolitos.
+            </div>
           </div>
         </div>
 
-        <h3 className="text-sm font-semibold mb-2">
-          Cuadro operativo (qué hacer durante la sesión)
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+        {/* Resumen total de la sesión */}
+        <div className="bg-gray-50 rounded-xl p-3 mb-4 text-xs text-gray-700 space-y-1">
+          <div>
+            <b>Duración estimada:</b> {hours.toFixed(2)} h ({minutes.toFixed(0)} min)
+          </div>
+          <div>
+            <b>CHO total objetivo:</b> {totalChoObjetivo.toFixed(0)} g | bebida:{' '}
+            {totalChoBebida.toFixed(0)} g | gel/barrita: {totalChoGel.toFixed(0)} g
+          </div>
+          <div>
+            <b>Fluido total objetivo:</b> {totalFluido.toFixed(0)} ml
+          </div>
+          <div>
+            <b>Sodio total objetivo:</b> {totalNaObjetivo.toFixed(0)} mg | bebida:{' '}
+            {totalNaBebida.toFixed(0)} mg | extra: {totalNaCaps.toFixed(0)} mg
+          </div>
+          {capsTotales > 0 && (
+            <div>
+              <b>Cápsulas totales (aprox.):</b> {capsTotales.toFixed(1)}{' '}
+              {electrolyte?.nombre && `(${electrolyte.nombre})`}
+            </div>
+          )}
+        </div>
+
+        {/* Cuadro operativo simple */}
+        <h3 className="text-sm font-semibold mb-2">Cuadro operativo para la carrera</h3>
+        <p className="text-xs text-gray-700 mb-2">
+          Esta tabla resume <b>cuándo</b> tomar el gel/barrita, y orientaciones para
+          hidratarte y usar sodio extra. Ajusta siempre según tolerancia y lo ya
+          probado en entrenamiento.
+        </p>
+
+        <div className="overflow-x-auto mb-3">
+          <table className="min-w-full text-xs">
             <thead>
               <tr className="bg-gray-100">
-                <th className="p-2 text-left">Componente</th>
-                <th className="p-2 text-left">Frecuencia orientativa</th>
-                <th className="p-2 text-left">Acción concreta</th>
+                <th className="p-2 text-left">#</th>
+                <th className="p-2 text-left">Tiempo</th>
+                <th className="p-2 text-left">
+                  Distancia {modality === 'Running' ? '(km)' : '(km bici)'}
+                </th>
+                <th className="p-2 text-left">Acción principal</th>
+                <th className="p-2 text-left">Comentario</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b">
-                <td className="p-2 font-semibold">Carbohidratos</td>
-                <td className="p-2">
-                  {choTargetNet > 0 && intervalMin
-                    ? `Cada ${intervalMin} min`
-                    : 'Según tolerancia / no se requiere CHO extra'}
-                </td>
-                <td className="p-2">
-                  {choTargetNet > 0 ? (
-                    <>
-                      Tomar <b>1 unidad</b> de{' '}
-                      <b>{choProduct.nombre}</b> cada{' '}
-                      <b>{intervalMin}</b> min (≈{' '}
-                      <b>{gelsPerHour.toFixed(1)} unid/h</b>).
-                    </>
-                  ) : (
-                    <>La bebida cubre prácticamente todo el objetivo de CHO.</>
-                  )}
-                </td>
-              </tr>
-              <tr className="border-b">
-                <td className="p-2 font-semibold">Hidratación</td>
-                <td className="p-2">
-                  {fluidGoalMlH > 0
-                    ? `Pequeños sorbos cada ${drinkIntervalMin} min`
-                    : 'Hidratación libre según sed'}
-                </td>
-                <td className="p-2">
-                  {fluidGoalMlH > 0 ? (
-                    <>
-                      Objetivo aproximado:{' '}
-                      <b>{fluidGoalMlH} ml/h</b>. Eso equivale a ~
-                      <b>{Math.round(drinkPerIntervalMl)} ml</b> de{' '}
-                      <b>{drink.nombre}</b> cada{' '}
-                      <b>{drinkIntervalMin}</b> min.
-                    </>
-                  ) : (
-                    <>No hay objetivo específico calculado de hidratación.</>
-                  )}
-                </td>
-              </tr>
-              <tr className="border-b">
-                <td className="p-2 font-semibold">Sodio extra</td>
-                <td className="p-2">
-                  {sodiumIntervalMin
-                    ? `Cada ${sodiumIntervalMin} min`
-                    : 'No se planifica sodio extra'}
-                </td>
-                <td className="p-2">
-                  {sodiumIntervalMin ? (
-                    <>
-                      Añadir <b>1 cápsula</b> de{' '}
-                      <b>{electrolyte.nombre}</b> aproximadamente cada{' '}
-                      <b>{sodiumIntervalMin}</b> min, hasta un total de{' '}
-                      <b>{capsulesTotal.toFixed(0)} cápsulas</b> en toda la
-                      prueba. Ajustar si hace frío, si la intensidad es baja o
-                      si aparecen signos de exceso de sodio.
-                    </>
-                  ) : (
-                    <>
-                      Con la bebida actual el objetivo de sodio se cubre casi
-                      por completo. Solo añadir cápsulas si un profesional lo
-                      indica o en condiciones de calor/extensión muy altas.
-                    </>
-                  )}
-                </td>
-              </tr>
+              {schedule.length === 0 ? (
+                <tr>
+                  <td className="p-2 text-center text-gray-500" colSpan={5}>
+                    Ajusta duración, objetivo de CHO y producto para generar un plan.
+                  </td>
+                </tr>
+              ) : (
+                schedule.map((row, i) => (
+                  <tr key={i} className="border-b">
+                    <td className="p-2">{row.idx}</td>
+                    <td className="p-2">{row.tMin} min</td>
+                    <td className="p-2">{row.distKm}</td>
+                    <td className="p-2">
+                      Tomar 1 unidad de {choProduct.nombre}
+                    </td>
+                    <td className="p-2">
+                      Mantener sorbos frecuentes de{' '}
+                      {drinkName ? drinkName.toLowerCase() : 'bebida'} para
+                      aproximar {fluidGoalMlH.toFixed(0)} ml/h.
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
+        {/* Recomendación sobre sodio extra */}
+        <div className="bg-blue-50 rounded-xl p-3 text-xs text-gray-800">
+          <b>Sodio extra (cápsulas/electrolitos):</b>{' '}
+          {electrolytePerH > 0 ? (
+            <>
+              objetivo aproximado de {sodiumGapMgH.toFixed(0)} mg/h adicionales. Con{' '}
+              {electrolyte.nombre} ({electrolyte.sodioPorUnidad} mg Na/unidad),
+              esto equivale a ~{electrolytePerH.toFixed(2)} cápsulas por hora
+              {intervaloCapsMin > 0 && ` (1 cápsula cada ~${intervaloCapsMin} min)`}.
+            </>
+          ) : (
+            <>
+              con la bebida seleccionada ya se cubre o casi se cubre el objetivo
+              de sodio. Puede no ser necesario sodio extra, salvo condiciones de
+              mucho calor o sudor muy salado.
+            </>
+          )}
+        </div>
+
         <p className="mt-3 text-[11px] text-gray-600 leading-tight">
-          Este resumen es operativo y orientativo. No sustituye una valoración
-          individual. Ajustar siempre junto con médico y/o nutricionista
-          deportivo, sobre todo en personas con antecedentes cardiovasculares,
-          renales o gastrointestinales.
+          Este modo está pensado como vista rápida para el deportista. No sustituye
+          la valoración individual ni los ajustes finos de un profesional de la
+          salud o nutrición deportiva.
         </p>
       </section>
 
