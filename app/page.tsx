@@ -266,12 +266,33 @@ export default function Page() {
     return rows;
   }, [intervalMin, minutes, modality, paceMinPerKm, speedKmh]);
 
-  /* Tasa de sudoración: test simple */
+   /* Tasa de sudoración: test simple */
   const [preWeight, setPreWeight] = useState(70);
   const [postWeight, setPostWeight] = useState(69.2);
-  const [drinkMl, setDrinkMl] = useState(500);
-  const [urineMl, setUrineMl] = useState(0);
+
+  // Pesos para calcular líquido ingerido (termo)
+  const [bottleBefore, setBottleBefore] = useState(0); // termo lleno antes (g)
+  const [bottleAfter, setBottleAfter] = useState(0); // termo con resto de líquido al final (g)
+
+  // Pesos para calcular volumen de orina (opcional)
+  const [urineBottleEmpty, setUrineBottleEmpty] = useState(0); // frasco vacío (g)
+  const [urineBottleFull, setUrineBottleFull] = useState(0); // frasco con orina (g)
+
   const [testDurationHHMM, setTestDurationHHMM] = useState('01:30');
+
+  // Cálculo automático de ml ingeridos (g ≈ ml)
+  const drinkMl = useMemo(() => {
+    if (!bottleBefore || !bottleAfter) return 0;
+    const diff = bottleBefore - bottleAfter;
+    return diff > 0 ? diff : 0;
+  }, [bottleBefore, bottleAfter]);
+
+  // Cálculo automático de ml de orina
+  const urineMl = useMemo(() => {
+    if (!urineBottleEmpty || !urineBottleFull) return 0;
+    const diff = urineBottleFull - urineBottleEmpty;
+    return diff > 0 ? diff : 0;
+  }, [urineBottleEmpty, urineBottleFull]);
 
   const sweatRateTestLh = useMemo(() => {
     const durMin = toMinutes(testDurationHHMM);
@@ -280,6 +301,7 @@ export default function Page() {
     const lossMl = deltaKg * 1000 + drinkMl - urineMl;
     return lossMl / (durMin / 60) / 1000;
   }, [preWeight, postWeight, drinkMl, urineMl, testDurationHHMM]);
+
 
   /* Resumen operativo */
   const gelsPerHour =
@@ -563,7 +585,7 @@ export default function Page() {
         </div>
       </section>
        
-  {/* TEST DE SUDORACIÓN SIMPLE */}
+        {/* TEST DE SUDORACIÓN SIMPLE */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Test rápido de tasa de sudoración
@@ -571,23 +593,19 @@ export default function Page() {
 
         <p className="text-sm text-gray-700 mb-2">
           <b>Material necesario:</b> báscula de peso corporal, una gramera o
-          báscula de cocina, un termo / caramañola, un vaso o frasco para la
-          orina (opcional) y algo para anotar la <b>temperatura</b> y la{' '}
-          <b>humedad</b> del día (por ejemplo, la app del clima). Registra esos
-          datos junto con el resultado del test para tener contexto.
+          báscula de cocina, un termo / caramañola, un frasco para la orina
+          (opcional) y algo para anotar la <b>temperatura</b> y la{' '}
+          <b>humedad</b> del día (por ejemplo, la app del clima).
         </p>
 
         <p className="text-sm text-gray-700 mb-3">
           Protocolo sugerido: utiliza una sesión de ≥45–60 min a intensidad
           similar a la competencia. Pésate <b>antes</b> (peso seco, tras ir al
-          baño), pesa el <b>termo vacío</b> y, si vas a medir orina, el{' '}
-          <b>frasco de orina vacío</b>. Durante el entrenamiento bebe solo de
-          ese termo y, si orinas, hazlo en el frasco. Al terminar, pésate de
-          nuevo, pesa el termo (para saber cuánto has bebido) y el frasco con
-          orina. El volumen que introduzcas en las casillas de{' '}
-          <b>&quot;Líquido ingerido (ml)&quot;</b> y <b>&quot;Orina (ml)&quot;</b>{' '}
-          debe calcularse restando el peso del recipiente vacío:
-          (peso lleno − peso vacío) × 1&nbsp;g/ml ≈ ml.
+          baño). Luego pesa el <b>termo lleno antes de salir</b> y, al terminar,
+          pesa el <b>termo con el líquido que queda</b>. Si vas a medir orina,
+          pesa el <b>frasco vacío</b> antes y el <b>frasco con orina</b> al
+          final. La app calcula automáticamente los <b>ml ingeridos</b> y los{' '}
+          <b>ml de orina</b> asumiendo que 1 g ≈ 1 ml.
         </p>
 
         <div className="grid md:grid-cols-5 gap-3 text-sm">
@@ -610,21 +628,25 @@ export default function Page() {
             />
           </label>
           <label>
-            Líquido ingerido (ml)
+            Termo lleno antes (g)
             <input
               type="number"
               className="w-full border p-2 rounded"
-              value={drinkMl}
-              onChange={(e) => setDrinkMl(parseFloat(e.target.value || '0'))}
+              value={bottleBefore}
+              onChange={(e) =>
+                setBottleBefore(parseFloat(e.target.value || '0'))
+              }
             />
           </label>
           <label>
-            Orina (ml, opcional)
+            Termo al final (g)
             <input
               type="number"
               className="w-full border p-2 rounded"
-              value={urineMl}
-              onChange={(e) => setUrineMl(parseFloat(e.target.value || '0'))}
+              value={bottleAfter}
+              onChange={(e) =>
+                setBottleAfter(parseFloat(e.target.value || '0'))
+              }
             />
           </label>
           <label>
@@ -637,6 +659,45 @@ export default function Page() {
           </label>
         </div>
 
+        <div className="grid md:grid-cols-4 gap-3 text-sm mt-3">
+          <label>
+            Frasco orina vacío (g, opcional)
+            <input
+              type="number"
+              className="w-full border p-2 rounded"
+              value={urineBottleEmpty}
+              onChange={(e) =>
+                setUrineBottleEmpty(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <label>
+            Frasco con orina (g, opcional)
+            <input
+              type="number"
+              className="w-full border p-2 rounded"
+              value={urineBottleFull}
+              onChange={(e) =>
+                setUrineBottleFull(parseFloat(e.target.value || '0'))
+              }
+            />
+          </label>
+          <div className="bg-gray-50 p-3 rounded text-xs md:col-span-2">
+            <div>
+              Líquido ingerido estimado:{' '}
+              <b>{drinkMl.toFixed(0)} ml</b>
+            </div>
+            <div>
+              Orina estimada:{' '}
+              <b>{urineMl.toFixed(0)} ml</b>
+            </div>
+            <div className="mt-1 text-gray-600">
+              Cálculo: diferencias de peso (g) → ml, asumiendo 1 g ≈ 1 ml,
+              restando automáticamente los recipientes.
+            </div>
+          </div>
+        </div>
+
         <div className="mt-3 text-sm bg-gray-50 p-3 rounded">
           Tasa de sudoración estimada:{' '}
           <b>{sweatRateTestLh > 0 ? sweatRateTestLh.toFixed(2) : '0.00'} L/h</b>
@@ -644,7 +705,8 @@ export default function Page() {
             Valores típicos en deportistas bien entrenados suelen estar entre
             ~0,5 y 1,5 L/h, pero pueden ser mayores en calor intenso. Usa este
             valor como referencia para la casilla de &quot;Tasa de sudoración
-            (L/h)&quot; en la sección de hidratación.
+            (L/h)&quot; en la sección de hidratación, registrando también
+            temperatura y humedad para interpretar mejor el contexto.
           </p>
         </div>
       </section>
