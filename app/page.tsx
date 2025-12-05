@@ -585,29 +585,48 @@ export default function Page() {
         </div>
       </section>
        
-        {/* TEST DE SUDORACIÓN SIMPLE */}
+            {/* TEST DE SUDORACIÓN SIMPLE */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Test rápido de tasa de sudoración
         </h2>
 
+        {/* Descripción general */}
         <p className="text-sm text-gray-700 mb-2">
-          <b>Material necesario:</b> báscula de peso corporal, una gramera o
-          báscula de cocina, un termo / caramañola, un frasco para la orina
-          (opcional) y algo para anotar la <b>temperatura</b> y la{' '}
-          <b>humedad</b> del día (por ejemplo, la app del clima).
+          Test práctico para estimar cuánta <b>agua</b> pierdes por hora en condiciones similares a tu competencia. 
+          Idealmente usar una sesión de ≥45–60 min a intensidad habitual.
         </p>
 
-        <p className="text-sm text-gray-700 mb-3">
-          Protocolo sugerido: utiliza una sesión de ≥45–60 min a intensidad
-          similar a la competencia. Pésate <b>antes</b> (peso seco, tras ir al
-          baño). Luego pesa el <b>termo lleno antes de salir</b> y, al terminar,
-          pesa el <b>termo con el líquido que queda</b>. Si vas a medir orina,
-          pesa el <b>frasco vacío</b> antes y el <b>frasco con orina</b> al
-          final. La app calcula automáticamente los <b>ml ingeridos</b> y los{' '}
-          <b>ml de orina</b> asumiendo que 1 g ≈ 1 ml.
-        </p>
+        {/* Bloque de materiales y pasos */}
+        <div className="grid md:grid-cols-2 gap-3 mb-3 text-sm">
+          <div className="bg-gray-50 rounded-xl p-3">
+            <h3 className="font-semibold text-gray-800 mb-1">Material necesario</h3>
+            <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+              <li>Báscula de peso corporal.</li>
+              <li>Gramera o báscula de cocina.</li>
+              <li>Termo / caramañola que usarás durante el entrenamiento.</li>
+              <li>Frasco para orina (opcional).</li>
+              <li>Registro de <b>temperatura</b> y <b>humedad</b> del día (app del clima o similar).</li>
+            </ul>
+          </div>
 
+          <div className="bg-gray-50 rounded-xl p-3">
+            <h3 className="font-semibold text-gray-800 mb-1">Cómo hacer el test</h3>
+            <ol className="list-decimal list-inside text-xs text-gray-700 space-y-1">
+              <li>Pésate <b>antes</b> del entrenamiento (tras ir al baño).</li>
+              <li>Pesa el <b>termo lleno</b> antes de salir.</li>
+              <li>Durante la sesión, bebe solo de ese termo. Si orinas, hazlo en el <b>frasco</b>.</li>
+              <li>Al terminar, pésate de nuevo.</li>
+              <li>Pesa el <b>termo al final</b> (con el líquido que queda).</li>
+              <li>Si mides orina, pesa el <b>frasco vacío</b> y el <b>frasco con orina</b>.</li>
+            </ol>
+            <p className="text-[11px] text-gray-600 mt-1">
+              La app calcula automáticamente los ml bebidos y la orina usando las diferencias de peso (1 g ≈ 1 ml).
+            </p>
+          </div>
+        </div>
+
+        {/* Formulario de datos */}
         <div className="grid md:grid-cols-5 gap-3 text-sm">
           <label>
             Peso antes (kg)
@@ -659,6 +678,7 @@ export default function Page() {
           </label>
         </div>
 
+        {/* Bloque de orina y resultados intermedios */}
         <div className="grid md:grid-cols-4 gap-3 text-sm mt-3">
           <label>
             Frasco orina vacío (g, opcional)
@@ -682,7 +702,8 @@ export default function Page() {
               }
             />
           </label>
-          <div className="bg-gray-50 p-3 rounded text-xs md:col-span-2">
+
+          <div className="bg-gray-50 p-3 rounded text-xs md:col-span-2 space-y-1">
             <div>
               Líquido ingerido estimado:{' '}
               <b>{drinkMl.toFixed(0)} ml</b>
@@ -691,25 +712,26 @@ export default function Page() {
               Orina estimada:{' '}
               <b>{urineMl.toFixed(0)} ml</b>
             </div>
-            <div className="mt-1 text-gray-600">
-              Cálculo: diferencias de peso (g) → ml, asumiendo 1 g ≈ 1 ml,
-              restando automáticamente los recipientes.
-            </div>
+            <p className="text-[11px] text-gray-600">
+              Cálculo automático a partir de la diferencia de peso: termo lleno − termo al final,
+              y frasco con orina − frasco vacío (1 g ≈ 1 ml).
+            </p>
           </div>
         </div>
 
+        {/* Resultado final */}
         <div className="mt-3 text-sm bg-gray-50 p-3 rounded">
           Tasa de sudoración estimada:{' '}
           <b>{sweatRateTestLh > 0 ? sweatRateTestLh.toFixed(2) : '0.00'} L/h</b>
           <p className="text-xs text-gray-600 mt-1">
-            Valores típicos en deportistas bien entrenados suelen estar entre
-            ~0,5 y 1,5 L/h, pero pueden ser mayores en calor intenso. Usa este
-            valor como referencia para la casilla de &quot;Tasa de sudoración
-            (L/h)&quot; en la sección de hidratación, registrando también
-            temperatura y humedad para interpretar mejor el contexto.
+            Valores típicos en deportistas bien entrenados suelen estar entre ~0,5 y 1,5 L/h, 
+            pero pueden ser mayores en calor intenso. Usa este valor como referencia para la 
+            casilla de &quot;Tasa de sudoración (L/h)&quot; en la sección de hidratación y 
+            registra siempre temperatura y humedad para interpretar mejor el contexto.
           </p>
         </div>
       </section>
+
 
 
             {/* HIDRATACIÓN */}
