@@ -585,7 +585,7 @@ export default function Page() {
         </div>
       </section>
        
-            {/* TEST DE SUDORACIÓN SIMPLE */}
+               {/* TEST DE SUDORACIÓN SIMPLE */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Test rápido de tasa de sudoración
