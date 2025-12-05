@@ -1,6 +1,7 @@
 {
   "name": "CHO Sport",
-  "short_name": "CHO",
+  "short_name": "CHO Sport",
+  "description": "Planificador educativo de carbohidratos e hidratación para deportistas de resistencia.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
