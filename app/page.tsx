@@ -562,17 +562,34 @@ export default function Page() {
           </div>
         </div>
       </section>
-
-      {/* TEST DE SUDORACIÓN SIMPLE */}
+       
+  {/* TEST DE SUDORACIÓN SIMPLE */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Test rápido de tasa de sudoración
         </h2>
-        <p className="text-sm text-gray-700 mb-3">
-          Protocolo sencillo: pésate antes y después, mide lo que bebes y, si es
-          posible, lo que orinas. Usa un entrenamiento de ≥45–60 min con
-          condiciones similares a la competencia.
+
+        <p className="text-sm text-gray-700 mb-2">
+          <b>Material necesario:</b> báscula de peso corporal, una gramera o
+          báscula de cocina, un termo / caramañola, un vaso o frasco para la
+          orina (opcional) y algo para anotar la <b>temperatura</b> y la{' '}
+          <b>humedad</b> del día (por ejemplo, la app del clima). Registra esos
+          datos junto con el resultado del test para tener contexto.
         </p>
+
+        <p className="text-sm text-gray-700 mb-3">
+          Protocolo sugerido: utiliza una sesión de ≥45–60 min a intensidad
+          similar a la competencia. Pésate <b>antes</b> (peso seco, tras ir al
+          baño), pesa el <b>termo vacío</b> y, si vas a medir orina, el{' '}
+          <b>frasco de orina vacío</b>. Durante el entrenamiento bebe solo de
+          ese termo y, si orinas, hazlo en el frasco. Al terminar, pésate de
+          nuevo, pesa el termo (para saber cuánto has bebido) y el frasco con
+          orina. El volumen que introduzcas en las casillas de{' '}
+          <b>&quot;Líquido ingerido (ml)&quot;</b> y <b>&quot;Orina (ml)&quot;</b>{' '}
+          debe calcularse restando el peso del recipiente vacío:
+          (peso lleno − peso vacío) × 1&nbsp;g/ml ≈ ml.
+        </p>
+
         <div className="grid md:grid-cols-5 gap-3 text-sm">
           <label>
             Peso antes (kg)
@@ -619,19 +636,21 @@ export default function Page() {
             />
           </label>
         </div>
+
         <div className="mt-3 text-sm bg-gray-50 p-3 rounded">
           Tasa de sudoración estimada:{' '}
           <b>{sweatRateTestLh > 0 ? sweatRateTestLh.toFixed(2) : '0.00'} L/h</b>
           <p className="text-xs text-gray-600 mt-1">
             Valores típicos en deportistas bien entrenados suelen estar entre
-            ~0,5 y 1,5 L/h, pero pueden ser mayores en calor intenso. Puedes
-            usar este valor como referencia para &quot;Tasa de sudoración (L/h)&quot;
-            en la sección de hidratación.
+            ~0,5 y 1,5 L/h, pero pueden ser mayores en calor intenso. Usa este
+            valor como referencia para la casilla de &quot;Tasa de sudoración
+            (L/h)&quot; en la sección de hidratación.
           </p>
         </div>
       </section>
 
-      {/* HIDRATACIÓN */}
+
+            {/* HIDRATACIÓN */}
       <section className="p-4 rounded-2xl shadow bg-white">
         <h2 className="text-lg font-semibold mb-2">
           Hidratación (tasa de sudoración y sodio)
@@ -700,6 +719,15 @@ export default function Page() {
             </select>
           </label>
         </div>
+
+        <p className="mt-2 text-xs text-gray-600">
+          Si no dispones de un test de laboratorio de sudor, la mayoría de
+          deportistas se sitúa de forma orientativa entre <b>≈400 y 800 mg/L</b>{' '}
+          de sodio; algunos pierden menos (~300 mg/L) y los &quot;saladores&quot;
+          pueden estar por encima de 900–1000 mg/L. Si tienes un resultado real
+          de test de sudoración, utiliza ese valor en esta casilla.
+        </p>
+
         <div className="mt-3 grid md:grid-cols-4 gap-3 text-sm bg-gray-50 p-3 rounded">
           <div>
             Porciones bebida/h: <b>{drinkServH.toFixed(2)}</b>
@@ -716,6 +744,7 @@ export default function Page() {
           </div>
         </div>
       </section>
+
 
       {/* PLAN DE COMPETENCIA */}
       <section className="p-4 rounded-2xl shadow bg-white">
