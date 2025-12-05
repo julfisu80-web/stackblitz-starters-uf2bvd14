@@ -2,6 +2,16 @@
 
 import React, { useMemo, useState } from 'react';
 
+/* ==== Registrar SW ==== */
+useEffect(() => {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/service-worker.js")
+      .then(() => console.log("Service Worker registrado"))
+      .catch((err) => console.error("Error registrando SW:", err));
+  }
+}, []);
+
 /* =========================
    Tipos y catálogos
    ========================= */
