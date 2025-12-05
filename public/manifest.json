@@ -1,23 +1,22 @@
 {
-  "name": "CHO Sport – Calculadora de CHO, Hidratación y Sodio",
+  "name": "CHO Sport",
   "short_name": "CHO Sport",
-  "description": "App técnica para deportistas: cálculo de carbohidratos por hora, hidratación, sodio, test de sudoración y plan operativo de carrera.",
+  "description": "Planificación de carbohidratos e hidratación para deportistas",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0d9488",
-  "orientation": "portrait",
+  "theme_color": "#1a73e8",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/cho-sport.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "sizes": "192x192"
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "/icons/cho-sport.png",
+      "sizes": "192x192",
+      "type": "image/png"
     }
   ]
 }
-
