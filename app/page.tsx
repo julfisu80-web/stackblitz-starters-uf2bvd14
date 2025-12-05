@@ -1,16 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-
-/* ==== Registrar SW ==== */
-useEffect(() => {
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("/service-worker.js")
-      .then(() => console.log("Service Worker registrado"))
-      .catch((err) => console.error("Error registrando SW:", err));
-  }
-}, []);
+import React, { useMemo, useState, useEffect } from 'react';
 
 /* =========================
    Tipos y catálogos
@@ -193,6 +183,16 @@ export default function Page() {
   const [temperature, setTemperature] = useState(20);
   const [gutTraining, setGutTraining] = useState(false);
 
+  /* ==== Registrar SW (ahora dentro del componente) ==== */
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/service-worker.js')
+        .then(() => console.log('Service Worker registrado'))
+        .catch((err) => console.error('Error registrando SW:', err));
+    }
+  }, []);
+
   /* Cuestionario nivel */
   const [qWeeks, setQWeeks] = useState(1);
   const [qSessions, setQSess] = useState(1);
@@ -214,7 +214,8 @@ export default function Page() {
   /* Catálogos */
   const [choProducts, setChoProducts] = useState<CHOProduct[]>(DEFAULT_CHO_PRODUCTS);
   const [drinks, setDrinks] = useState<DrinkProduct[]>(DEFAULT_DRINKS);
-  const [electrolytes, setElectrolytes] = useState<ElectrolyteProduct[]>(DEFAULT_ELECTROLYTES);
+  const [electrolytes, setElectrolytes] =
+    useState<ElectrolyteProduct[]>(DEFAULT_ELECTROLYTES);
 
   const [choProductName, setChoProductName] = useState(choProducts[0].nombre);
   const [drinkName, setDrinkName] = useState(drinks[0].nombre);
@@ -234,16 +235,13 @@ export default function Page() {
   const fluidGoalMlH = Math.round(sweatRateLh * 1000 * (replacePct / 100));
   const sodiumGoalMgH = Math.round(sweatRateLh * sweatNaMgL * (replacePct / 100));
 
-  const drinkServH =
-    drink.mlPorPorcion > 0 ? fluidGoalMlH / drink.mlPorPorcion : 0;
+  const drinkServH = drink.mlPorPorcion > 0 ? fluidGoalMlH / drink.mlPorPorcion : 0;
   const drinkCHOgh = drink.choPorPorcion * drinkServH;
   const drinkNaMgH = drink.sodioPorPorcion * drinkServH;
 
   const sodiumGapMgH = Math.max(0, sodiumGoalMgH - drinkNaMgH);
   const electrolytePerH =
-    electrolyte.sodioPorUnidad > 0
-      ? sodiumGapMgH / electrolyte.sodioPorUnidad
-      : 0;
+    electrolyte.sodioPorUnidad > 0 ? sodiumGapMgH / electrolyte.sodioPorUnidad : 0;
 
   /* CHO neto para gel/barrita */
   const choTargetNet = Math.max(0, choTarget - drinkCHOgh);
