@@ -175,15 +175,7 @@ const round5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
    ========================= */
 
 export default function Page() {
-  /* Perfil */
-  const [modality, setModality] = useState<Modality>('Running');
-  const [durationHHMM, setDurationHHMM] = useState('03:30');
-  const [paceMinPerKm, setPaceMinPerKm] = useState(5);
-  const [speedKmh, setSpeedKmh] = useState(30);
-  const [temperature, setTemperature] = useState(20);
-  const [gutTraining, setGutTraining] = useState(false);
-
-  /* ==== Registrar SW (ahora dentro del componente) ==== */
+  /* Registrar service worker para PWA */
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -192,6 +184,14 @@ export default function Page() {
         .catch((err) => console.error('Error registrando SW:', err));
     }
   }, []);
+
+  /* Perfil */
+  const [modality, setModality] = useState<Modality>('Running');
+  const [durationHHMM, setDurationHHMM] = useState('03:30');
+  const [paceMinPerKm, setPaceMinPerKm] = useState(5);
+  const [speedKmh, setSpeedKmh] = useState(30);
+  const [temperature, setTemperature] = useState(20);
+  const [gutTraining, setGutTraining] = useState(false);
 
   /* Cuestionario nivel */
   const [qWeeks, setQWeeks] = useState(1);
@@ -214,8 +214,7 @@ export default function Page() {
   /* Catálogos */
   const [choProducts, setChoProducts] = useState<CHOProduct[]>(DEFAULT_CHO_PRODUCTS);
   const [drinks, setDrinks] = useState<DrinkProduct[]>(DEFAULT_DRINKS);
-  const [electrolytes, setElectrolytes] =
-    useState<ElectrolyteProduct[]>(DEFAULT_ELECTROLYTES);
+  const [electrolytes, setElectrolytes] = useState<ElectrolyteProduct[]>(DEFAULT_ELECTROLYTES);
 
   const [choProductName, setChoProductName] = useState(choProducts[0].nombre);
   const [drinkName, setDrinkName] = useState(drinks[0].nombre);
@@ -227,7 +226,7 @@ export default function Page() {
   const choProduct =
     choProducts.find((p) => p.nombre === choProductName) || choProducts[0];
 
-  /* Hidratación por sudor */
+  /* Hidratación por sudor (plan) */
   const [sweatRateLh, setSweatRateLh] = useState(0.8);
   const [sweatNaMgL, setSweatNaMgL] = useState(800);
   const [replacePct, setReplacePct] = useState(70);
@@ -235,13 +234,16 @@ export default function Page() {
   const fluidGoalMlH = Math.round(sweatRateLh * 1000 * (replacePct / 100));
   const sodiumGoalMgH = Math.round(sweatRateLh * sweatNaMgL * (replacePct / 100));
 
-  const drinkServH = drink.mlPorPorcion > 0 ? fluidGoalMlH / drink.mlPorPorcion : 0;
+  const drinkServH =
+    drink.mlPorPorcion > 0 ? fluidGoalMlH / drink.mlPorPorcion : 0;
   const drinkCHOgh = drink.choPorPorcion * drinkServH;
   const drinkNaMgH = drink.sodioPorPorcion * drinkServH;
 
   const sodiumGapMgH = Math.max(0, sodiumGoalMgH - drinkNaMgH);
   const electrolytePerH =
-    electrolyte.sodioPorUnidad > 0 ? sodiumGapMgH / electrolyte.sodioPorUnidad : 0;
+    electrolyte.sodioPorUnidad > 0
+      ? sodiumGapMgH / electrolyte.sodioPorUnidad
+      : 0;
 
   /* CHO neto para gel/barrita */
   const choTargetNet = Math.max(0, choTarget - drinkCHOgh);
@@ -280,7 +282,7 @@ export default function Page() {
 
   // Pesos para calcular líquido ingerido (termo)
   const [bottleBefore, setBottleBefore] = useState(0); // termo lleno antes (g)
-  const [bottleAfter, setBottleAfter] = useState(0); // termo con resto de líquido al final (g)
+  const [bottleAfter, setBottleAfter] = useState(0); // termo al final (g)
 
   // Pesos para calcular volumen de orina (opcional)
   const [urineBottleEmpty, setUrineBottleEmpty] = useState(0); // frasco vacío (g)
@@ -326,14 +328,14 @@ export default function Page() {
     electrolytePerH > 0 ? Math.round(60 / electrolytePerH) : 0;
   const capsulesTotal = electrolytePerH * hours;
 
-  const totalChoObjetivo = hours * choTarget; // g totales objetivo
-  const totalChoBebida = hours * drinkCHOgh; // g totales aportados por bebida
-  const totalChoGel = hours * choTargetNet; // g totales a cubrir con gel/barrita
+  const totalChoObjetivo = hours * choTarget;
+  const totalChoBebida = hours * drinkCHOgh;
+  const totalChoGel = hours * choTargetNet;
 
-  const totalFluido = fluidGoalMlH * hours; // ml totales de fluido
-  const totalNaObjetivo = sodiumGoalMgH * hours; // mg totales de sodio objetivo
-  const totalNaBebida = drinkNaMgH * hours; // mg totales de sodio desde bebida
-  const totalNaCaps = Math.max(0, totalNaObjetivo - totalNaBebida); // mg totales extra
+  const totalFluido = fluidGoalMlH * hours;
+  const totalNaObjetivo = sodiumGoalMgH * hours;
+  const totalNaBebida = drinkNaMgH * hours;
+  const totalNaCaps = Math.max(0, totalNaObjetivo - totalNaBebida);
 
   const capsTotales =
     electrolytePerH > 0 && electrolyte.sodioPorUnidad > 0
@@ -475,7 +477,9 @@ export default function Page() {
                   step="0.1"
                   className="w-full border p-2 rounded"
                   value={paceMinPerKm}
-                  onChange={(e) => setPaceMinPerKm(parseFloat(e.target.value || '0'))}
+                  onChange={(e) =>
+                    setPaceMinPerKm(parseFloat(e.target.value || '0'))
+                  }
                 />
               </label>
             ) : (
@@ -486,7 +490,9 @@ export default function Page() {
                   step="0.1"
                   className="w-full border p-2 rounded"
                   value={speedKmh}
-                  onChange={(e) => setSpeedKmh(parseFloat(e.target.value || '0'))}
+                  onChange={(e) =>
+                    setSpeedKmh(parseFloat(e.target.value || '0'))
+                  }
                 />
               </label>
             )}
@@ -496,7 +502,9 @@ export default function Page() {
                 type="number"
                 className="w-full border p-2 rounded"
                 value={temperature}
-                onChange={(e) => setTemperature(parseFloat(e.target.value || '0'))}
+                onChange={(e) =>
+                  setTemperature(parseFloat(e.target.value || '0'))
+                }
               />
             </label>
             <label className="col-span-2 flex items-center gap-2 text-sm">
@@ -1468,3 +1476,4 @@ export default function Page() {
     </div>
   );
 }
+
